@@ -1,0 +1,96 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: pocketllm-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand({ ping: 1 })"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: pocketllm-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    environment:
+      OLLAMA_HOST: 0.0.0.0
+    volumes:
+      - ollama_models:/root/.ollama
+
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: pocketllm-ollama-init
+    depends_on:
+      ollama:
+        condition: service_started
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    volumes:
+      - ollama_models:/root/.ollama   # same volume as main ollama
+    entrypoint: [ "/bin/sh", "-c" ]
+    command: >
+      "ollama pull gemma3:270m &&
+       echo 'Models ready'"
+
+  backend:
+    build: ./backend
+    container_name: pocketllm-backend
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+      ollama-init:
+        condition: service_completed_successfully
+    env_file:
+      - ./backend/.env.docker
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/src:/app/src
+#      - /app/node_modules
+
+  frontend:
+    build: ./frontend
+    container_name: pocketllm-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    env_file:
+      - ./frontend/.env.docker
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src
+#      - /app/node_modules
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+
+#  frontend:
+#    container_name: pocketllm-frontend
+#    image: node:22-alpine
+#    working_dir: /app
+#    volumes:
+#      - ./frontend:/app
+#      - /app/node_modules
+#    ports:
+#      - "5173:5173"
+#    env_file:
+#      - ./frontend/.env.docker
+#    command: [ "npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173" ]
+#    depends_on:
+#      - backend
+
+
+volumes:
+  mongo_data:
+  ollama_models:
