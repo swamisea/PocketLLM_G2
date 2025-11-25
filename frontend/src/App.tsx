@@ -1,105 +1,80 @@
-import React, { useState } from "react";
-import type { ChatMessage } from "../../common/src/types/chat";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+import React, { useCallback } from "react";
+import { useSessions, LocalSessionItem } from "./hooks/useSessions";
+import Sidebar from "./components/Sidebar";
+import ChatPage from "./pages/ChatPage";
 
 const App: React.FC = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { state, actions } = useSessions();
 
-  const sendMessage = async () => {
-    const trimmed = input.trim();
-    if (!trimmed) return;
+  const handleSelect = useCallback(
+    (id: string) => {
+      actions.select(id);
+    },
+    [actions]
+  );
 
-    const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content: trimmed,
-      createdAt: new Date().toISOString()
+  const handleNew = useCallback(() => {
+    // If there is any existing local draft (a local session with no messages),
+    // select and clear that draft rather than creating a new one. This prevents
+    // multiple empty sessions from being created.
+    const emptyLocal = state.localSessions.find(
+      (s) => !state.localSessionHasMessages[s.id]
+    );
+    if (emptyLocal) {
+      if (state.currentSessionId !== emptyLocal.id) {
+        actions.select(emptyLocal.id);
+      }
+      actions.bumpClearSignal();
+      return;
+    }
+
+    const tempId = `local-${crypto.randomUUID()}`;
+    const temp: LocalSessionItem = {
+      id: tempId,
+      title: "New chat",
+      createdAt: new Date().toISOString(),
+      local: true,
     };
+    actions.createLocal(temp);
+    // No need to reload the backend when a local session is created
+  }, [state, actions]);
 
-    setMessages(prev => [...prev, userMessage]);
-    setInput("");
-    setLoading(true);
+  const handleSessionCreated = useCallback(
+    (tempId: string | undefined, serverId: string) => {
+      actions.persisted(tempId, serverId);
+    },
+    [actions]
+  );
 
-    try {
-      const res = await fetch(`${API_URL}/api/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          message: trimmed,
-          history: messages
-        })
-      });
+  const handleActivity = useCallback(() => {
+    // notify sidebar to reload if desired by bumping key
+    actions.bumpReload();
+  }, [actions]);
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
-      const reply: ChatMessage = data.reply;
-      setMessages(prev => [...prev, reply]);
-    } catch (err) {
-      console.error("Failed to send message", err);
-      const errorMsg: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: "Sorry, something went wrong talking to the model.",
-        createdAt: new Date().toISOString()
-      };
-      setMessages(prev => [...prev, errorMsg]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      if (!loading) {
-        sendMessage();
-      }
-    }
-  };
+  const handleDraftStateChange = useCallback(
+    (sessionId?: string, hasMessages?: boolean) => {
+      if (!sessionId || !sessionId.startsWith("local-")) return;
+      actions.markDraftHasMessages(sessionId, !!hasMessages);
+    },
+    [actions]
+  );
 
   return (
-    <div className="app">
-      <div className="chat-container">
-        <header className="chat-header">
-          <h1>Pocket LLM Chat</h1>
-          <span className="status-pill">
-            {loading ? "Thinking..." : "Idle"}
-          </span>
-        </header>
-        <main className="chat-body">
-          {messages.length === 0 && (
-            <div style={{ color: "#6b7280", fontSize: "0.9rem" }}>
-              Start a conversation by typing a message below. This goes through:
-              <br />
-              <strong>Frontend → Backend API → LangChain (ChatOllama) → Ollama Container</strong>
-            </div>
-          )}
-          {messages.map((m) => (
-            <div key={m.id} className={`message ${m.role}`}>
-              {m.content}
-            </div>
-          ))}
-        </main>
-        <footer className="chat-footer">
-          <textarea
-            placeholder="Ask something..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-          <button onClick={sendMessage} disabled={loading}>
-            {loading ? "Sending..." : "Send"}
-          </button>
-        </footer>
-      </div>
+    <div className="app layout-with-sidebar">
+      <Sidebar
+        reloadKey={state.sessionsReloadKey}
+        localSessions={state.localSessions}
+        currentSessionId={state.currentSessionId}
+        onSelect={handleSelect}
+        onNew={handleNew}
+      />
+      <ChatPage
+        sessionId={state.currentSessionId}
+        onSessionActivity={handleActivity}
+        onSessionCreated={handleSessionCreated}
+        onDraftStateChange={handleDraftStateChange}
+        clearSignal={state.clearSignal}
+      />
     </div>
   );
 };
