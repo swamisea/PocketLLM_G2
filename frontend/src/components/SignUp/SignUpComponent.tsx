@@ -1,28 +1,85 @@
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, ChangeEvent } from 'react'
 import { Form, Button, Alert } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
+import axios, { AxiosError } from 'axios'
 import './SignUpComponent.css'
 
 interface SignUpProps {
   onSignUp: (user: { email: string }) => void
 }
 
+interface ValidationErrors {
+  username?: string[];
+  email?: string[];
+  password?: string[];
+}
+
+interface CreateUserResponse{
+  success: boolean;
+  errors?: ValidationErrors;
+  message?: string 
+}
+
 function SignUp({ onSignUp }: SignUpProps) {
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
   const [email, setEmail] = useState<string>('')
-  const [userName, setUsername] = useState<string>('')
+  const [username, setUsername] = useState<string>('')
   const [password, setPassword] = useState<string>('')
   const [showPassword, setShowPassword] = useState<boolean>(false)
-  const [error, setError] = useState<string>('')
+  const [generalError, setGeneralError] = useState<string>('')
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
+  const [isLoading, setIsLoading] = useState<boolean>(false)
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+
+    //clear previous errors
+    setGeneralError('')
+    setValidationErrors({})
     
-    if (!email || !password) {
-      setError('Please fill in all fields')
+    if (!email || !password || !username) {
+      setGeneralError('Please fill in all fields')
       return
     }
-    
-    console.log('Signing up with:', { email, password })
+
+    setIsLoading(true)
+
+    try {
+      const response = await axios.post(`${API_URL}/api/create-user`, {
+        email,
+        username,
+        password
+      })
+      
+      // Success
+      if (response.data.success) {
+        console.log(response)
+        onSignUp({ email })
+      }
+    } catch (error) {
+      console.log(error)
+      // Axios throws for 4xx/5xx responses
+      if (axios.isAxiosError(error)) {
+        const errorData = error.response?.data as CreateUserResponse
+        
+        if (errorData?.errors) {
+          // Field-specific validation errors
+          setValidationErrors(errorData.errors)
+        } else if (errorData?.message) {
+          // General error (like "Email already exists")
+          setGeneralError(errorData.message)
+        } else {
+          setGeneralError('Failed to create account')
+        }
+      } else {
+        // Network error or unexpected error
+        setGeneralError('Network error. Please try again.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+
+    console.log('Signing up with:', { email })
     onSignUp({ email })
   }
 
@@ -39,7 +96,7 @@ function SignUp({ onSignUp }: SignUpProps) {
           </p>
 
           <Form onSubmit={handleSubmit}>
-            {error && <Alert variant="danger">{error}</Alert>}
+            {generalError && <Alert variant="danger">{generalError}</Alert>}
             
             <Form.Group className="mb-4" controlId="email">
               <Form.Label className="text-light small">Email</Form.Label>
@@ -47,8 +104,14 @@ function SignUp({ onSignUp }: SignUpProps) {
                 className='form-field'
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                isInvalid = {!!validationErrors.email}
               />
+              {validationErrors.email?.map((error, idx) => (
+                <Form.Control.Feedback key={idx} type="invalid" style={{display: 'block'}}>
+                  {error}
+                </Form.Control.Feedback>
+              ))}
             </Form.Group>
 
             <Form.Group className="mb-4" controlId="username">
@@ -56,9 +119,15 @@ function SignUp({ onSignUp }: SignUpProps) {
               <Form.Control
                 className='form-field'
                 type="text"
-                value ={userName}
-                onChange={(uname) => setUsername(uname.target.value)}
+                value ={username}
+                onChange={(uname: ChangeEvent<HTMLInputElement>) => setUsername(uname.target.value)}
+                isInvalid = {!!validationErrors.username}
               />
+              {validationErrors.username?.map((error, idx) => (
+                <Form.Control.Feedback key={idx} type="invalid" style={{display: 'block'}}>
+                  {error}
+                </Form.Control.Feedback>
+              ))}
             </Form.Group>
 
             <Form.Group className="mb-3" controlId="password">
@@ -75,8 +144,14 @@ function SignUp({ onSignUp }: SignUpProps) {
                 className='form-field'
                 type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                isInvalid={!!validationErrors.password}
               />
+              {validationErrors.password?.map((error, idx) => (
+                <Form.Control.Feedback key={idx} type="invalid" style={{display: 'block'}}>
+                  {error}
+                </Form.Control.Feedback>
+              ))}
             </Form.Group>
 
             {/* Password requirements */}
@@ -91,8 +166,9 @@ function SignUp({ onSignUp }: SignUpProps) {
             <Button 
               className="btn-submit px-5 py-2"
               type="submit" 
+              disabled={isLoading}
             >
-              Create an account
+              {isLoading ? 'Creating account...' : 'Create an account'}
             </Button>
 
             <p className="text-light mt-4 small">

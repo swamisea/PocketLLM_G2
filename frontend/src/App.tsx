@@ -87,18 +87,8 @@ const App: React.FC = () => {
     <div className="app">
       <BrowserRouter>
         <Routes>
-          <Route
-            path="/signup"
-            element={
-              user ? <Navigate to="/chat" /> : <SignUp onSignUp={handleSignUp} />
-            }
-          />
-          <Route
-            path="/login"
-            element={
-              user ? <Navigate to="/chat" /> : <Login onLogin={handleLogin} />
-            }
-          />
+          <Route path="/signup" element={<SignUp onSignUp={handleSignUp} />} />
+          <Route path="/login" element={<Login onLogin={handleLogin} />} />
           {/*<Route
           path="/"
           element={
@@ -122,7 +112,7 @@ const App: React.FC = () => {
                 </header>
                 <main className="chat-body">
                   {messages.length === 0 && (
-                    <div style={{ color: "#6b7280", fontSize: "0.9rem" }}>
+                    <div style={{ color: "#F9F6EE", fontSize: "0.9rem" }}>
                       Start a conversation by typing a message below. This goes
                       through:
                       <br />
