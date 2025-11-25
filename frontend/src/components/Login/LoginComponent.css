@@ -1,0 +1,60 @@
+.login-wrapper {
+    display: flex;
+    min-width: 100vw;
+    min-height: 100vh;
+}
+
+.login-container {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 3rem;
+    background: #1a1a2e;
+}
+
+.form-container {
+    max-width: 500px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.page-greeting {
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.text-light {
+    color: #F9F6EE;
+}
+
+.form-field {
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.form-field-password {
+    cursor: pointer;
+}
+
+.password-rules {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.7rem;
+}
+
+.btn-submit {
+    background-color: #228B22 !important;
+    border-color: #228B22 !important;
+    border-radius: 25px;
+    font-weight: 500;
+}
+
+.img-login {
+    width: 50%;
+    background-color: #1a1a2e;
+    background-image: url(https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=2232&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D);
+    background-size: cover;
+    background-position: center;
+}
