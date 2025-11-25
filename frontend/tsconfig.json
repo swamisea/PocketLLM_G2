@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@common/*": ["../common/src/*"]
+    },
     "target": "ES2020",
     "useDefineForClassFields": true,
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
@@ -18,6 +22,7 @@
   },
   "include": [
     "src",
-    "vite-env.d.ts"
+    "vite-env.d.ts",
+    "../common/src"
   ]
 }

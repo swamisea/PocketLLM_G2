@@ -1,6 +1,6 @@
-import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
+import { app } from "./app";
+import { connectToMongo, closeMongo } from "./db";
 import { json } from "express";
 import { ChatOllama } from "@langchain/ollama";
 import { randomUUID } from "crypto";
@@ -18,11 +18,30 @@ export interface ChatMessage {
 
 dotenv.config();
 
-const app = express();
-app.use(cors());
-app.use(json());
-
 const PORT = process.env.PORT || 8080;
+
+async function start() {
+  if (process.env.MONGO_URL) {
+    await connectToMongo(process.env.MONGO_URL);
+  }
+
+  const server = app.listen(PORT, () => {
+    console.log(`Backend listening on ${PORT}`);
+  });
+
+  const shutdown = async (signal: string) => {
+    console.log(`Received ${signal}, shutting down...`);
+    server.close(() => {
+      console.log("HTTP server closed");
+    });
+    try {
+      await closeMongo();
+      console.log("Mongo connection closed");
+    } catch (err) {
+      console.error("Error closing Mongo connection:", err);
+    }
+    process.exit(0);
+  };
 const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
 //const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "llama3.1:8b";
 const MISTRAL_MODEL = process.env.MISTRAL_MODEL || "mistral";

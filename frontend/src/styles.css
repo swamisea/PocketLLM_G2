@@ -4,7 +4,9 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background: #0f172a;
   color: #e5e7eb;
 }
 
@@ -24,6 +26,11 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* Keep the chat container full-height to keep footer anchored */
+.chat-container {
+  height: 100%;
 }
 
 .chat-header {
@@ -46,6 +53,59 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  position: relative;
+}
+
+/* Visible scrollbar styles */
+.chat-body::-webkit-scrollbar,
+.session-list::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.chat-body::-webkit-scrollbar-track,
+.session-list::-webkit-scrollbar-track,
+.sidebar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.chat-body::-webkit-scrollbar-thumb,
+.session-list::-webkit-scrollbar-thumb,
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+}
+
+/* Firefox */
+.chat-body,
+.session-list,
+.sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.06) transparent;
+}
+
+/* Always reserve space for scrollbar to prevent content shift */
+.chat-body,
+.session-list {
+  scrollbar-gutter: stable both-edges;
+}
+
+/* Fallback for macOS where overlay scrollbars hide by default: add a faint inset on the right so the scrollbar area is visually present */
+.chat-body::after,
+.session-list::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 10px;
+  height: 100%;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0),
+    rgba(255, 255, 255, 0.01)
+  );
+  border-left: 1px solid rgba(255, 255, 255, 0.01);
 }
 
 .message {
@@ -106,6 +166,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 110px;
 }
 
 .chat-footer button:disabled {
@@ -119,4 +180,89 @@ body {
   border-radius: 999px;
   border: 1px solid #1f2937;
   color: #9ca3af;
+}
+
+/* Sidebar layout */
+.layout-with-sidebar {
+  gap: 1rem;
+  align-items: stretch;
+  height: calc(100vh - 4rem);
+}
+
+.sidebar {
+  width: 260px;
+  background: #020617;
+  border: 1px solid #1f2937;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: 100%;
+}
+
+.sidebar-top {
+  display: flex;
+  justify-content: center;
+}
+
+.new-chat-btn {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: #111827;
+  color: #e5e7eb;
+  border: 1px solid #1f2937;
+  cursor: pointer;
+}
+
+.session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  max-height: calc(100% - 56px);
+  position: relative;
+}
+
+.session-tile {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 64px;
+  min-height: 64px;
+  overflow: hidden;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.session-tile:hover {
+  background: #071233;
+}
+
+.session-tile.active {
+  /* background: #0b1220;
+  border-color: #2563eb; */
+  border-left: 3px solid #2563eb;
+  background: #0c1b35;
+}
+
+.session-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-meta {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.muted {
+  color: #9ca3af;
+  font-size: 0.9rem;
 }
