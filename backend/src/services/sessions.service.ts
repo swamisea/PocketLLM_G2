@@ -2,23 +2,23 @@ import { ObjectId } from "mongodb";
 import { Request, Response } from "express";
 import { randomUUID } from "crypto";
 import { getCollection } from "../db";
-import type { ChatMessage } from "../../../common/src/types/chat";
+import type { ChatMessage } from "@common/types/chat";
+import type { Session, SessionItem } from "@common/types/session";
 
 export async function listSessions(req: Request, res: Response) {
   try {
-    const sessions = getCollection("sessions");
+    const sessions = getCollection<Session>("sessions");
     const docs = await sessions
       .find({}, { projection: { messages: 0 } })
       .sort({ createdAt: -1 })
       .toArray();
 
-    res.json({
-      sessions: docs.map((d) => ({
-        id: d._id.toString(),
-        title: d.title,
-        createdAt: d.createdAt,
-      })),
-    });
+    const items: SessionItem[] = docs.map((d) => ({
+      id: d._id.toString(),
+      title: d.title,
+      createdAt: d.createdAt,
+    }));
+    res.json({ sessions: items });
   } catch (e) {
     res.status(500).json({ error: "Failed to list sessions" });
   }
@@ -30,16 +30,20 @@ export async function createSession(
 ) {
   try {
     const { title } = req.body;
-    const sessions = getCollection("sessions");
+    const sessions = getCollection<Session>("sessions");
 
-    const doc = {
+    const doc: Omit<Session, "id"> = {
       title: title || "New chat",
       createdAt: new Date().toISOString(),
       messages: [] as ChatMessage[],
     };
 
-    const r = await sessions.insertOne(doc);
-    res.status(201).json({ session: { id: r.insertedId.toString(), ...doc } });
+    const r = await sessions.insertOne(doc as any);
+    const resultSession: Session = {
+      id: r.insertedId.toString(),
+      ...doc,
+    } as Session;
+    res.status(201).json({ session: resultSession });
   } catch (e) {
     res.status(500).json({ error: "Failed to create session" });
   }
@@ -47,13 +51,20 @@ export async function createSession(
 
 export async function getSession(req: Request, res: Response) {
   try {
-    const sessions = getCollection("sessions");
-    const doc = await sessions.findOne({ _id: new ObjectId(req.params.id) });
+    const sessions = getCollection<Session>("sessions");
+    const raw = (await sessions.findOne({
+      _id: new ObjectId(req.params.id),
+    })) as any;
 
-    if (!doc) return res.status(404).json({ error: "Session not found" });
+    if (!raw) return res.status(404).json({ error: "Session not found" });
 
-    doc.id = doc._id.toString();
-    res.status(200).json({ session: doc });
+    const session: Session = {
+      id: raw._id.toString(),
+      title: raw.title,
+      createdAt: raw.createdAt,
+      messages: (raw.messages || []) as ChatMessage[],
+    };
+    res.status(200).json({ session });
   } catch (e) {
     res.status(500).json({ error: "Failed to get session" });
   }
@@ -61,7 +72,7 @@ export async function getSession(req: Request, res: Response) {
 
 export async function appendMessage(req: Request, res: Response) {
   try {
-    const sessions = getCollection("sessions");
+    const sessions = getCollection<Session>("sessions");
 
     const msg = req.body.message as ChatMessage | undefined;
     if (!msg || !msg.content || !msg.role) {

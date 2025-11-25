@@ -3,7 +3,8 @@ import { ChatOllama } from "@langchain/ollama";
 import { getCollection } from "../db";
 import { ObjectId } from "mongodb";
 import { Request, Response } from "express";
-import { ChatMessage } from "../../../common/src/types/chat";
+import type { ChatMessage } from "@common/types/chat";
+import type { Session } from "@common/types/session";
 
 const model = new ChatOllama({
   baseUrl: process.env.OLLAMA_URL,
@@ -43,7 +44,7 @@ export async function handleChat(
       createdAt: new Date().toISOString(),
     };
 
-    const sessions = getCollection("sessions");
+    const sessions = getCollection<Session>("sessions");
 
     let sid = sessionId;
     let createdSession = false;
@@ -59,12 +60,12 @@ export async function handleChat(
         };
 
     if (!sid) {
-      const doc = {
+      const doc: Omit<Session, "id"> = {
         title: (userMsg.content && userMsg.content.slice(0, 64)) || "New chat",
         createdAt: new Date().toISOString(),
         messages: [] as ChatMessage[],
       };
-      sid = (await sessions.insertOne(doc)).insertedId.toString();
+      sid = (await sessions.insertOne(doc as any)).insertedId.toString();
       createdSession = true;
     }
 
