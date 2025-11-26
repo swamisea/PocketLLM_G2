@@ -1,6 +1,6 @@
 import { useState, FormEvent, ChangeEvent } from 'react'
 import { Form, Button, Alert } from 'react-bootstrap'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import type { ValidationErrors } from '@common/types/account'
 import { createUser } from '../../services/account.service'
 import './SignUpComponent.css'

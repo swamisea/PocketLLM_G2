@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react'
 import { Form, Button, Alert } from 'react-bootstrap'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { loginUser } from '../../services/account.service'
 import './LoginComponent.css'
 

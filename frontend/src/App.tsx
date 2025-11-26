@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 import { useSessions, LocalSessionItem } from "./hooks/useSessions";
 import SignUp from "./components/SignUp/SignUpComponent";
 import Login from "./components/Login/LoginComponent";
