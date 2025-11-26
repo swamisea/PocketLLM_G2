@@ -1,20 +1,14 @@
 import { useState, FormEvent } from 'react'
 import { Form, Button, Alert } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
-import axios, { AxiosError } from 'axios'
+import { loginUser } from '../../services/account.service'
 import './LoginComponent.css'
 
 interface LoginProps {
-  onLogin: (user: { email: string }) => void
-}
-
-interface LoginUserResponse{
-  valid: boolean;
-  message: string;
+  onLogin: (user: { email: string; username: string; id: string }) => void
 }
 
 function Login({ onLogin }: LoginProps) {
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
   const [email, setEmail] = useState<string>('')
   const [password, setPassword] = useState<string>('')
   const [showPassword, setShowPassword] = useState<boolean>(false)
@@ -32,35 +26,29 @@ function Login({ onLogin }: LoginProps) {
     setIsLoading(true)
 
     try {
-      const response = await axios.post(`${API_URL}/api/login`, {
+      const response = await loginUser({
         email,
         password
       })
       
       // Success
-      if (response.data.success) {
+      if (response.success && response.user) {
         console.log(response)
-        onLogin({ email })
+        onLogin({ 
+          email: response.user.email,
+          username: response.user.username,
+          id: response.user.id
+         })
+      }
+      else{
+        setError(response.message || 'Login failed')
       }
     } catch (error) {
-      console.log(error)
-      // Axios throws for 4xx/5xx responses
-      if (axios.isAxiosError(error)) {
-        const errorData = error.response?.data as LoginUserResponse
-        
-        if (errorData?.message) {
-          setError(errorData.message)
-        }
-      } else {
-        // Network error or unexpected error
-        setError('Network error. Please try again.')
-      }
+      console.log("Login Error:", error)
+      setError('Network error. Please try again.')
     } finally {
       setIsLoading(false)
     }
-
-    console.log('Logging in with:', { email, password })
-    onLogin({ email })
   }
 
   return (
@@ -82,6 +70,7 @@ function Login({ onLogin }: LoginProps) {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
               />
             </Form.Group>
 
@@ -100,12 +89,14 @@ function Login({ onLogin }: LoginProps) {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
               />
             </Form.Group>
 
             <Button 
               className="btn-submit px-5 py-2"
               type="submit" 
+              disabled={isLoading}
             >
               {isLoading? 'Logging in...' : 'Login'}
             </Button>

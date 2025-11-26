@@ -1,13 +1,14 @@
-import React, { useCallback } from "react";
-import { useSessions, LocalSessionItem } from "./hooks/useSessions";
-import Sidebar from "./components/Sidebar";
+import React, { useCallback, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useSessions, LocalSessionItem } from "./hooks/useSessions";
 import SignUp from "./components/SignUp/SignUpComponent";
 import Login from "./components/Login/LoginComponent";
+import Sidebar from "./components/Sidebar";
 import ChatPage from "./pages/ChatPage";
+import {User} from "@common/types/account";
 
-const App: React.FC = () => {
-  const [user, setUser] = useState<string | null>(null);
+const App = () => {
+  const [user, setUser] = useState<User | null>(null);
   const { state, actions } = useSessions();
 
   const handleSelect = useCallback(
@@ -17,12 +18,24 @@ const App: React.FC = () => {
     [actions]
   );
 
-  const handleSignUp = (userData: { email: string }) => {
-    setUser(userData.email);
+  const handleSignUp = (userData: { email: string; username: string; }) => {
+    setUser({
+      email: userData.email,
+      username: userData.username,
+      id: "", // You may want to get this from the signup response,
+      theme: "dark",
+      createdAt: new Date().toISOString(),
+    });
   };
 
-  const handleLogin = (userData: { email: string }) => {
-    setUser(userData.email);
+  const handleLogin = (userData: { email: string; username: string; id: string }) => {
+    setUser({
+      email: userData.email,
+      username: userData.username,
+      id: userData.id,
+      theme: "dark",
+      createdAt: new Date().toISOString(), // You may want to fetch this
+    });
   };
 
   const handleLogout = () => {
@@ -66,53 +79,6 @@ const App: React.FC = () => {
     // notify sidebar to reload if desired by bumping key
     actions.bumpReload();
   }, [actions]);
-  const sendMessage = async () => {
-    const trimmed = input.trim();
-    if (!trimmed) return;
-
-    const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content: trimmed,
-      createdAt: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setLoading(true);
-
-    try {
-      const res = await fetch(`${API_URL}/api/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: trimmed,
-          history: messages,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
-      const reply: ChatMessage = data.reply;
-      setMessages((prev) => [...prev, reply]);
-    } catch (err) {
-      console.error("Failed to send message", err);
-      const errorMsg: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: "Sorry, something went wrong talking to the model.",
-        createdAt: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, errorMsg]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDraftStateChange = useCallback(
     (sessionId?: string, hasMessages?: boolean) => {
@@ -121,94 +87,51 @@ const App: React.FC = () => {
     },
     [actions]
   );
-  const handleKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (
-    e
-  ) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      if (!loading) {
-        sendMessage();
-      }
-    }
-  };
 
   return (
-    <div className="app layout-with-sidebar">
-      <Sidebar
-        reloadKey={state.sessionsReloadKey}
-        localSessions={state.localSessions}
-        currentSessionId={state.currentSessionId}
-        onSelect={handleSelect}
-        onNew={handleNew}
-      />
-      <ChatPage
-        sessionId={state.currentSessionId}
-        onSessionActivity={handleActivity}
-        onSessionCreated={handleSessionCreated}
-        onDraftStateChange={handleDraftStateChange}
-        clearSignal={state.clearSignal}
-      />
-    <div className="app">
       <BrowserRouter>
         <Routes>
-          <Route path="/signup" element={<SignUp onSignUp={handleSignUp} />} />
-          <Route path="/login" element={<Login onLogin={handleLogin} />} />
-          {/*<Route
+          <Route path="/signup" 
+          element={
+            user ? <Navigate to="/" replace /> : <SignUp onSignUp={handleSignUp} />
+            } 
+            />
+
+          <Route path="/login" 
+          element={
+            user ? <Navigate to="/" replace /> : <Login onLogin={handleLogin} />
+          } 
+          />
+
+        <Route
           path="/"
           element={
             user ? (
-              <Home user={user} onLogout={handleLogout} />
+              <div className="app layout-with-sidebar">
+                <Sidebar
+                  reloadKey={state.sessionsReloadKey}
+                  localSessions={state.localSessions}
+                  currentSessionId={state.currentSessionId}
+                  onSelect={handleSelect}
+                  onNew={handleNew}
+                />
+                <ChatPage
+                  sessionId={state.currentSessionId}
+                  onSessionActivity={handleActivity}
+                  onSessionCreated={handleSessionCreated}
+                  onDraftStateChange={handleDraftStateChange}
+                  clearSignal={state.clearSignal}
+                />
+              </div>
             ) : (
-              <Navigate to="/signup" />
+              <Navigate to="/login" replace />
             )
           }
-        />*/}
-
-          <Route
-            path="/chat"
-            element={
-              <div className="chat-container">
-                <header className="chat-header">
-                  <h1>Pocket LLM Chat</h1>
-                  <span className="status-pill">
-                    {loading ? "Thinking..." : "Idle"}
-                  </span>
-                </header>
-                <main className="chat-body">
-                  {messages.length === 0 && (
-                    <div style={{ color: "#F9F6EE", fontSize: "0.9rem" }}>
-                      Start a conversation by typing a message below. This goes
-                      through:
-                      <br />
-                      <strong>
-                        Frontend → Backend API → LangChain (ChatOllama) → Ollama
-                        Container
-                      </strong>
-                    </div>
-                  )}
-                  {messages.map((m) => (
-                    <div key={m.id} className={`message ${m.role}`}>
-                      {m.content}
-                    </div>
-                  ))}
-                </main>
-                <footer className="chat-footer">
-                  <textarea
-                    placeholder="Ask something..."
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                  />
-                  <button onClick={sendMessage} disabled={loading}>
-                    {loading ? "Sending..." : "Send"}
-                  </button>
-                </footer>
-              </div>
-            }
-          />
+        />
+        {/* Catch-all route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
-    </div>
   );
 };
 

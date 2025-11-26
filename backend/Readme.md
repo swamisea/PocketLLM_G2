@@ -23,7 +23,7 @@ npm start
 
 Place environment variables in a `.env` file or in your environment when running:
 - `PORT` — port to run the server on (default 8080)
-- `MONGO_URI` — MongoDB connection URI
+- `DB_CONN_STRING` — MongoDB connection URI
 - `OLLAMA_URL` — Ollama endpoint
 - `OLLAMA_MODEL` — Ollama model name
 

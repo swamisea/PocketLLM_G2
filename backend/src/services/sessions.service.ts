@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { Request, Response } from "express";
 import { randomUUID } from "crypto";
-import { getCollection } from "../db";
+import { getCollection } from "../services/database.service";
 import type { ChatMessage } from "@common/types/chat";
 import type { Session, SessionItem } from "@common/types/session";
 

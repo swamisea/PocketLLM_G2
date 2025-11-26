@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { ChatOllama } from "@langchain/ollama";
-import { getCollection } from "../db";
+import { getCollection } from "../services/database.service";
 import { ObjectId } from "mongodb";
 import { Request, Response } from "express";
 import type { ChatMessage } from "@common/types/chat";

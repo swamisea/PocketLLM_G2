@@ -1,27 +1,17 @@
 import { useState, FormEvent, ChangeEvent } from 'react'
 import { Form, Button, Alert } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
-import axios, { AxiosError } from 'axios'
+import type { ValidationErrors } from '@common/types/account'
+import { createUser } from '../../services/account.service'
 import './SignUpComponent.css'
 
 interface SignUpProps {
-  onSignUp: (user: { email: string }) => void
+  onSignUp: (user: { email: string; username: string }) => void
 }
 
-interface ValidationErrors {
-  username?: string[];
-  email?: string[];
-  password?: string[];
-}
 
-interface CreateUserResponse{
-  success: boolean;
-  errors?: ValidationErrors;
-  message?: string 
-}
 
 function SignUp({ onSignUp }: SignUpProps) {
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
   const [email, setEmail] = useState<string>('')
   const [username, setUsername] = useState<string>('')
   const [password, setPassword] = useState<string>('')
@@ -45,42 +35,31 @@ function SignUp({ onSignUp }: SignUpProps) {
     setIsLoading(true)
 
     try {
-      const response = await axios.post(`${API_URL}/api/create-user`, {
+      const response = await createUser({
         email,
         username,
         password
       })
       
       // Success
-      if (response.data.success) {
+      if (response.success) {
         console.log(response)
-        onSignUp({ email })
-      }
-    } catch (error) {
-      console.log(error)
-      // Axios throws for 4xx/5xx responses
-      if (axios.isAxiosError(error)) {
-        const errorData = error.response?.data as CreateUserResponse
-        
-        if (errorData?.errors) {
-          // Field-specific validation errors
-          setValidationErrors(errorData.errors)
-        } else if (errorData?.message) {
-          // General error (like "Email already exists")
-          setGeneralError(errorData.message)
+        onSignUp({ email, username })
+      }else{
+        if (response.errors) {
+          setValidationErrors(response.errors)
+        } else if (response.message) {
+          setGeneralError(response.message)
         } else {
           setGeneralError('Failed to create account')
         }
-      } else {
-        // Network error or unexpected error
-        setGeneralError('Network error. Please try again.')
       }
+    } catch (error) {
+      console.log("Sign Up Error:", error)
+      setGeneralError('Network error. Please try again.')
     } finally {
       setIsLoading(false)
     }
-
-    console.log('Signing up with:', { email })
-    onSignUp({ email })
   }
 
   return (
