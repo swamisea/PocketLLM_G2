@@ -9,7 +9,7 @@ const Sidebar: React.FC = () => {
   return (
     <Stack h="100%">
       {/* NEW CHAT BUTTON */}
-      <Button fullWidth onClick={() => actions.createSession()}>
+      <Button variant={"gradient"} size={"md"} radius={"md"} fullWidth onClick={() => actions.createSession()}>
         + New chat
       </Button>
 
@@ -21,13 +21,25 @@ const Sidebar: React.FC = () => {
           {serverSessions.map((s) => (
             <Button
               key={s.id}
-              variant={state.currentSessionId === s.id ? "filled" : "subtle"}
-              justify="space-between"
+              variant={state.currentSessionId === s.id ? "light" : "subtle"}
+              justify="flex-start"
               onClick={() => actions.select(s.id)}
+              size={"lg"} radius={"md"}
+              styles={{
+                root: {
+                  paddingLeft: 16,
+                  borderLeft: state.currentSessionId === s.id ? "3px solid #2563eb" : ""
+                },
+              }}
             >
-              <Text size="sm" style={{ flex: 1 }} lineClamp={1}>
-                {s.title || "Untitled"}
-              </Text>
+              <Stack gap={0} align={"flex-start"}>
+                <Text size="sm" style={{ flex: 1 }} lineClamp={1}>
+                  {s.title || "Untitled"}
+                </Text>
+                <Text size="sm" c="dimmed" style={{ flex: 1 }} lineClamp={1}>
+                  {s.createdAt ? new Date(s.createdAt).toLocaleString() : ""}
+                </Text>
+              </Stack>
             </Button>
           ))}
 
