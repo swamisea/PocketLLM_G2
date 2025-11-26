@@ -1,6 +1,6 @@
 // src/components/layout/Sidebar.tsx
 import React from "react";
-import { AppShell, ScrollArea, Button, Stack, Text } from "@mantine/core";
+import { ScrollArea, Button, Stack, Text } from "@mantine/core";
 import { useSessions } from "../../hooks/useSessions";
 
 const Sidebar: React.FC = () => {

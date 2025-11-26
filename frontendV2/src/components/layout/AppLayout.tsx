@@ -1,31 +1,62 @@
 // src/components/layout/AppLayout.tsx
-import React from "react";
-import { AppShell, Burger, Group, Text, Button } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
+import React, { useEffect, useState } from "react";
+import {
+  AppShell,
+  Group,
+  Text,
+  Button,
+  ActionIcon, useMantineTheme,
+} from "@mantine/core";
 import { Outlet, useNavigate } from "react-router";
+import { useHover, useMediaQuery } from "@mantine/hooks";
+import { IconChevronLeft, IconLayoutSidebar } from "@tabler/icons-react";
+
 import Sidebar from "./Sidebar";
 import { useAuth } from "../../hooks/useAuth";
 
 const AppLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const theme = useMantineTheme()
+  // Mantine's default "sm" breakpoint is 48em (~768px)
+  const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.xs})`);
 
-  // Mobile navbar open/close
-  const [mobileOpened, { toggle: toggleMobile }] = useDisclosure(false);
+  // Collapsed state: desktop -> expanded by default, mobile -> collapsed by default
+  const [navbarCollapsed, setNavbarCollapsed] = useState<boolean>(true);
+
+  useEffect(() => {
+    // When breakpoint changes, reset default:
+    //  - mobile: collapsed
+    //  - desktop: expanded
+    setNavbarCollapsed(isMobile ? true : false);
+  }, [isMobile]);
+
+  const toggleNavbar = () => {
+    setNavbarCollapsed((prev) => !prev);
+  };
 
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
   };
 
+  // useHover for the icon
+  const { hovered, ref } = useHover();
+
+  const IconNode = navbarCollapsed || !hovered
+    ? <IconLayoutSidebar size={18} />
+    : <IconChevronLeft size={18} />;
+
   return (
     <AppShell
-      // configure header & navbar (v7 style)
       header={{ height: 60 }}
       navbar={{
         width: 260,
-        breakpoint: "sm",
-        collapsed: { mobile: !mobileOpened },
+        breakpoint: "xs",
+        collapsed: {
+          mobile: navbarCollapsed,
+          desktop: navbarCollapsed,
+        },
       }}
       padding="md"
     >
@@ -33,13 +64,17 @@ const AppLayout: React.FC = () => {
       <AppShell.Header>
         <Group justify="space-between" h="100%" px="md">
           <Group gap="xs">
-            {/* mobile burger to toggle navbar */}
-            <Burger
-              opened={mobileOpened}
-              onClick={toggleMobile}
-              hiddenFrom="sm"
-              size="sm"
-            />
+            {/* Collapse / expand icon */}
+            <ActionIcon
+              ref={ref}
+              variant="subtle"
+              radius="xl"
+              aria-label="Toggle sidebar"
+              onClick={toggleNavbar}
+            >
+              {IconNode}
+            </ActionIcon>
+
             <Text fw={600}>PocketLLM Portal</Text>
           </Group>
 
@@ -56,12 +91,12 @@ const AppLayout: React.FC = () => {
         </Group>
       </AppShell.Header>
 
-      {/* NAVBAR */}
+      {/* NAVBAR (collapsible sidebar) */}
       <AppShell.Navbar p="sm">
         <Sidebar />
       </AppShell.Navbar>
 
-      {/* MAIN CONTENT AREA */}
+      {/* MAIN CONTENT */}
       <AppShell.Main>
         <Outlet />
       </AppShell.Main>
