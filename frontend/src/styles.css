@@ -186,6 +186,8 @@ body {
 .layout-with-sidebar {
   gap: 1rem;
   align-items: stretch;
+  display: flex;
+  flex-direction: row;
   height: calc(100vh - 4rem);
 }
 
