@@ -5,6 +5,7 @@ import { Request, Response } from "express";
 import argon2 from 'argon2';
 import { getCollection } from "./database.service";
 import { CreateUserRequest, User, LoginUserRequest } from "../../../common/src/types/account";
+import { generateJWTToken} from "../utils/jwt.util";
 
 interface InputFieldValidation {
     valid: boolean;
@@ -222,9 +223,15 @@ export async function loginUser(req: Request, res: Response) {
             });
         }
 
+        const token = generateJWTToken(
+            existingUser._id.toString(),
+            existingUser.email,
+            existingUser.username
+        )
         res.status(200).json({
             success: true,
             message: "Login successful",
+            token: token,
             user: {
                 id: existingUser._id.toString(),
                 email: existingUser.email,
