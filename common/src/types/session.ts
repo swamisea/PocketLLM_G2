@@ -3,7 +3,7 @@ import { ChatMessage } from "./chat";
 export interface SessionItem {
   id: string;
   title: string;
-  createdAt: string; // ISO string
+  createdAt?: string; // ISO string
 }
 
 export interface Session extends SessionItem {

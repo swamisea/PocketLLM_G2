@@ -1,15 +1,60 @@
 // src/components/layout/Sidebar.tsx
 import React from "react";
 import { ScrollArea, Button, Stack, Text } from "@mantine/core";
-import { useSessions } from "../../hooks/useSessions";
+import { useQuery } from "@tanstack/react-query";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router";
+
+import { listSessions } from "../../services/sessions.service";
+import { queryKeys } from "../../lib/queryKeys";
+import type { RootState } from "../../store";
+
+import {
+  startDraftSession,
+  setSelectedSessionId,
+  type SessionListItem,
+} from "../../store/sessionsSlice";
 
 const Sidebar: React.FC = () => {
-  const { state, serverSessions, isLoading, actions } = useSessions();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const { selectedId, draft } = useSelector(
+    (state: RootState) => state.sessions
+  );
+
+  const { data: serverSessions = [], isLoading } = useQuery({
+    queryKey: queryKeys.sessions.list(),
+    queryFn: listSessions,
+  });
+
+  const allSessions: SessionListItem[] = [
+    ...(draft ? [draft] : []),
+    ...serverSessions as SessionListItem[],
+  ];
+
+  const handleSelect = (id: string) => {
+    dispatch(setSelectedSessionId(id));
+    navigate(id ? `/sessions/${id}` : "/");
+  };
+
+  const handleNewChat = () => {
+    const tempId = `local-${Date.now()}`;
+    const nowIso = new Date().toISOString();
+    const draftSession: SessionListItem = {
+      id: tempId,
+      title: "New chat",
+      local: true,
+    };
+    dispatch(startDraftSession(draftSession));
+    dispatch(setSelectedSessionId(tempId));
+    navigate(`/sessions/${tempId}`);
+  };
 
   return (
     <Stack h="100%">
       {/* NEW CHAT BUTTON */}
-      <Button variant={"gradient"} size={"md"} radius={"md"} fullWidth onClick={() => actions.createSession()}>
+      <Button variant={"gradient"} size={"md"} radius={"md"} fullWidth onClick={() => handleNewChat()}>
         + New chat
       </Button>
 
@@ -18,17 +63,17 @@ const Sidebar: React.FC = () => {
         <Stack gap="xs" mt="sm">
           {isLoading && <Text size="sm">Loading sessions...</Text>}
 
-          {serverSessions.map((s) => (
+          {allSessions.map((s) => (
             <Button
               key={s.id}
-              variant={state.currentSessionId === s.id ? "light" : "subtle"}
+              variant={selectedId === s.id ? "light" : "subtle"}
               justify="flex-start"
-              onClick={() => actions.select(s.id)}
+              onClick={() => handleSelect(s.id)}
               size={"lg"} radius={"md"}
               styles={{
                 root: {
                   paddingLeft: 16,
-                  borderLeft: state.currentSessionId === s.id ? "3px solid #2563eb" : ""
+                  borderLeft: selectedId === s.id ? "3px solid #2563eb" : ""
                 },
               }}
             >

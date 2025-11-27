@@ -2,11 +2,7 @@ import { useState, useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { queryKeys } from "../lib/queryKeys";
 import { sendChat } from "../services/chat.service";
-
-export interface ChatMessage {
-  role: "user" | "assistant" | string;
-  content: string;
-}
+import { ChatMessage } from "@common/types/chat";
 
 export function useChat(initialMessages: ChatMessage[] = []) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);

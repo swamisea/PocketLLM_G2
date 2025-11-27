@@ -34,10 +34,10 @@ export const router = createBrowserRouter([
     element: <AppLayout />,
     loader: authLoader,
     children: [
-      {
-        index: true,
-        element: <ChatPage />,
-      },
+      // no session selected
+      { index: true, element: <ChatPage /> },
+      // specific session
+      { path: "sessions/:sessionId", element: <ChatPage /> },
     ],
   },
   {

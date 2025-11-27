@@ -1,8 +1,8 @@
 export type Role = "user" | "assistant";
 
 export interface ChatMessage {
-  id: string;
+  id?: string;
   role: Role;
   content: string;
-  createdAt: string; // ISO string
+  createdAt?: string; // ISO string
 }
