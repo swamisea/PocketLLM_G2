@@ -19,7 +19,7 @@ const ChatPage: React.FC = () => {
   const dispatch = useDispatch();
   const { sessionId: urlSessionId } = useParams<{ sessionId?: string }>();
 
-  const { selectedId, draft } = useSelector(
+  const { selectedId } = useSelector(
     (state: RootState) => state.sessions
   );
   const effectiveSessionId = selectedId ?? urlSessionId;
@@ -35,7 +35,6 @@ const ChatPage: React.FC = () => {
 
   const { messages, isThinking, isLoadingSession, sendMessage } = useChat({
     effectiveSessionId,
-    draft,
   });
 
   const [input, setInput] = useState("");

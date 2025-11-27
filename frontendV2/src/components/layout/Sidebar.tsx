@@ -10,16 +10,14 @@ import { queryKeys } from "../../lib/queryKeys";
 import type { RootState } from "../../store";
 
 import {
-  startDraftSession,
   setSelectedSessionId,
-  type SessionListItem,
 } from "../../store/sessionsSlice";
 
 const Sidebar: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { selectedId, draft } = useSelector(
+  const { selectedId } = useSelector(
     (state: RootState) => state.sessions
   );
 
@@ -28,27 +26,14 @@ const Sidebar: React.FC = () => {
     queryFn: listSessions,
   });
 
-  const allSessions: SessionListItem[] = [
-    ...(draft ? [draft] : []),
-    ...serverSessions as SessionListItem[],
-  ];
-
   const handleSelect = (id: string) => {
     dispatch(setSelectedSessionId(id));
     navigate(id ? `/sessions/${id}` : "/");
   };
 
   const handleNewChat = () => {
-    const tempId = `local-${Date.now()}`;
-    const nowIso = new Date().toISOString();
-    const draftSession: SessionListItem = {
-      id: tempId,
-      title: "New chat",
-      local: true,
-    };
-    dispatch(startDraftSession(draftSession));
-    dispatch(setSelectedSessionId(tempId));
-    navigate(`/sessions/${tempId}`);
+    dispatch(setSelectedSessionId(undefined));
+    navigate(`/`);
   };
 
   return (
@@ -63,7 +48,7 @@ const Sidebar: React.FC = () => {
         <Stack gap="xs" mt="sm">
           {isLoading && <Text size="sm">Loading sessions...</Text>}
 
-          {allSessions.map((s) => (
+          {serverSessions.map((s) => (
             <Button
               key={s.id}
               variant={selectedId === s.id ? "light" : "subtle"}

@@ -37,10 +37,16 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
       style={{ flex: 1, minHeight: 0 }}
       viewportRef={viewportRef}
     >
-      <Stack>
+      <Stack mt="sm">
         {isLoading && !messages.length && (
-          <Text size="sm" c="dimmed">
+          <Text size="sm" mt="sm" c="dimmed">
             Loading conversation…
+          </Text>
+        )}
+
+        {!isLoading && !messages.length && (
+          <Text size="sm" mt="sm" c="dimmed">
+            Start a conversation by typing a message below.
           </Text>
         )}
 

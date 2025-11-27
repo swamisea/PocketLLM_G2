@@ -1,23 +1,16 @@
-import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router";
+import {useEffect, useState} from "react";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import {useDispatch} from "react-redux";
+import {useNavigate} from "react-router";
 
-import type { ChatMessage } from "@common/types/chat";
-import { createSession, getSession } from "../services/sessions.service";
-import { sendChat } from "../services/chat.service";
-import { queryKeys } from "../lib/queryKeys";
-import {clearDraftSession, SessionListItem, setSelectedSessionId} from "../store/sessionsSlice";
-
-type DraftSession = {
-  id: string;
-  title?: string;
-  local?: boolean;
-} | null;
+import type {ChatMessage} from "@common/types/chat";
+import {createSession, getSession} from "../services/sessions.service";
+import {sendChat} from "../services/chat.service";
+import {queryKeys} from "../lib/queryKeys";
+import { setSelectedSessionId } from "../store/sessionsSlice";
 
 interface UseChatArgs {
   effectiveSessionId?: string;
-  draft?: SessionListItem | null;
 }
 
 interface UseChatResult {
@@ -29,14 +22,10 @@ interface UseChatResult {
 
 export function useChat({
                           effectiveSessionId,
-                          draft,
                         }: UseChatArgs): UseChatResult {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  const isDraftSession =
-    !!draft && effectiveSessionId === draft.id && draft.local;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isThinking, setIsThinking] = useState(false);
@@ -44,11 +33,11 @@ export function useChat({
   // Load messages for persisted sessions
   const { data: sessionData, isLoading: isLoadingSession } = useQuery({
     queryKey:
-      effectiveSessionId && !isDraftSession
+      effectiveSessionId
         ? queryKeys.sessions.byId(effectiveSessionId)
         : ["session", "none"],
     queryFn: () => getSession(effectiveSessionId as string),
-    enabled: !!effectiveSessionId && !isDraftSession,
+    enabled: !!effectiveSessionId,
   });
 
   useEffect(() => {
@@ -57,15 +46,10 @@ export function useChat({
       return;
     }
 
-    if (isDraftSession) {
-      setMessages([]);
-      return;
-    }
-
     if (sessionData?.messages) {
       setMessages(sessionData.messages);
     }
-  }, [effectiveSessionId, isDraftSession, sessionData]);
+  }, [effectiveSessionId, sessionData]);
 
   const createSessionMutation = useMutation({
     mutationFn: (title?: string) => createSession(title),
@@ -95,33 +79,40 @@ export function useChat({
     setIsThinking(true);
 
     try {
-      let targetSessionId = effectiveSessionId;
-
       // If this is a draft / no-session yet, create it first
-      if (!targetSessionId || isDraftSession) {
-        const titleFromMessage =
-          trimmed.length > 40 ? `${trimmed.slice(0, 40)}…` : trimmed;
-        const session = await createSessionMutation.mutateAsync(
-          draft?.title || titleFromMessage
-        );
-        targetSessionId = session.id;
+      // if (!targetSessionId) {
+      //   const titleFromMessage =
+      //     trimmed.length > 40 ? `${trimmed.slice(0, 40)}…` : trimmed;
+      //   const session = await createSessionMutation.mutateAsync(
+      //     draft?.title || titleFromMessage
+      //   );
+      //   targetSessionId = session.id;
+      //
+      //   // Clear draft and update selection + URL and sessions list
+      //   dispatch(clearDraftSession());
+      //   dispatch(setSelectedSessionId(session.id));
+      //   navigate(`/sessions/${session.id}`, { replace: true });
+      //   queryClient.invalidateQueries({
+      //     queryKey: queryKeys.sessions.list(),
+      //   });
+      // }
 
-        // Clear draft and update selection + URL and sessions list
-        dispatch(clearDraftSession());
-        dispatch(setSelectedSessionId(session.id));
-        navigate(`/sessions/${session.id}`, { replace: true });
+      // Now send the chat message
+      const result = await chatMutation.mutateAsync({
+        message: trimmed,
+        sessionId: effectiveSessionId,
+      });
+
+      setMessages((prev) => [...prev, result.reply]);
+
+      if (!effectiveSessionId && result.sessionId) {
+        dispatch(setSelectedSessionId(result.sessionId));
+        navigate(`/sessions/${result.sessionId}`, { replace: true });
         queryClient.invalidateQueries({
           queryKey: queryKeys.sessions.list(),
         });
       }
 
-      // Now send the chat message
-      const result = await chatMutation.mutateAsync({
-        message: trimmed,
-        sessionId: targetSessionId,
-      });
-
-      setMessages((prev) => [...prev, result.reply]);
     } catch (e) {
       console.error(e);
     } finally {
