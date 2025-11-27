@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState,} from "react";
-import {Badge, Button, Group, Paper, ScrollArea, Stack, Text, Textarea,} from "@mantine/core";
+import {Badge, Button, Container, Group, Paper, ScrollArea, Stack, Text, Textarea,} from "@mantine/core";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {useDispatch, useSelector} from "react-redux";
 import {useNavigate, useParams} from "react-router";
@@ -168,12 +168,7 @@ const ChatPage: React.FC = () => {
   const canSend = input.trim().length > 0 && status !== "thinking";
 
   return (
-    <Paper
-      shadow="sm"
-      radius="md"
-      p="md"
-      style={{height: "100%", display: "flex", flexDirection: "column"}}
-    >
+    <Container p={0} h={"100%"}>
       {/* Header row - title + status pill */}
       <Group justify="space-between" mb="sm">
         <Text fw={600}>Pocket LLM Chat</Text>
@@ -252,8 +247,8 @@ const ChatPage: React.FC = () => {
         <Group align="flex-end" mt="md">
           <Textarea
             autosize
-            minRows={2}
-            maxRows={4}
+            minRows={1}
+            maxRows={6}
             style={{flex: 1}}
             placeholder="Send a message..."
             value={input}
@@ -265,7 +260,7 @@ const ChatPage: React.FC = () => {
           </Button>
         </Group>
       </Paper>
-    </Paper>
+    </Container>
   );
 };
 
