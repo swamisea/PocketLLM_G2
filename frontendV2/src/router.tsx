@@ -37,7 +37,7 @@ export const router = createBrowserRouter([
       // no session selected
       { index: true, element: <ChatPage /> },
       // specific session
-      { path: "sessions/:sessionId", element: <ChatPage /> },
+      { path: "chat/:sessionId", element: <ChatPage /> },
     ],
   },
   {

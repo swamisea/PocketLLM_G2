@@ -28,7 +28,7 @@ const Sidebar: React.FC = () => {
 
   const handleSelect = (id: string) => {
     dispatch(setSelectedSessionId(id));
-    navigate(id ? `/sessions/${id}` : "/");
+    navigate(id ? `/chat/${id}` : "/");
   };
 
   const handleNewChat = () => {

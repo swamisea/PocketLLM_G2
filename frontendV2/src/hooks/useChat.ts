@@ -79,24 +79,6 @@ export function useChat({
     setIsThinking(true);
 
     try {
-      // If this is a draft / no-session yet, create it first
-      // if (!targetSessionId) {
-      //   const titleFromMessage =
-      //     trimmed.length > 40 ? `${trimmed.slice(0, 40)}…` : trimmed;
-      //   const session = await createSessionMutation.mutateAsync(
-      //     draft?.title || titleFromMessage
-      //   );
-      //   targetSessionId = session.id;
-      //
-      //   // Clear draft and update selection + URL and sessions list
-      //   dispatch(clearDraftSession());
-      //   dispatch(setSelectedSessionId(session.id));
-      //   navigate(`/sessions/${session.id}`, { replace: true });
-      //   queryClient.invalidateQueries({
-      //     queryKey: queryKeys.sessions.list(),
-      //   });
-      // }
-
       // Now send the chat message
       const result = await chatMutation.mutateAsync({
         message: trimmed,
@@ -107,7 +89,7 @@ export function useChat({
 
       if (!effectiveSessionId && result.sessionId) {
         dispatch(setSelectedSessionId(result.sessionId));
-        navigate(`/sessions/${result.sessionId}`, { replace: true });
+        navigate(`/chat/${result.sessionId}`, { replace: true });
         queryClient.invalidateQueries({
           queryKey: queryKeys.sessions.list(),
         });
