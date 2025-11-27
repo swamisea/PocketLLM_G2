@@ -1,8 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { SessionItem } from "@common/types/session";
 
-export type SessionListItem = SessionItem & { local?: boolean };
-
 interface SessionsState {
   selectedId?: string;
 }

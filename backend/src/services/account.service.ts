@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 import { Request, Response } from "express";
 import argon2 from 'argon2';
 import { getCollection } from "./database.service";
-import { CreateUserRequest, User, LoginUserRequest } from "../../../common/src/types/account";
+import { CreateUserRequest, LoginUserRequest } from "@common/types/account";
 
 interface InputFieldValidation {
     valid: boolean;
