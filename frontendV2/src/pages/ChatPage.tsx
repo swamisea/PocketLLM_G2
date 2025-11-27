@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState,} from "react";
-import {Badge, Button, Container, Group, Paper, ScrollArea, Stack, Text, Textarea,} from "@mantine/core";
+import {Badge, Button, Container, Group, Loader, Paper, ScrollArea, Stack, Text, Textarea,} from "@mantine/core";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {useDispatch, useSelector} from "react-redux";
 import {useNavigate, useParams} from "react-router";
@@ -203,20 +203,37 @@ const ChatPage: React.FC = () => {
 
             {messages.map((m, idx) => {
               const isUser = m.role === "user";
+              const bubbleStyle = isUser
+                ? {
+                  backgroundColor: "var(--mantine-color-blue-6)",
+                  color: "white",
+                  borderTopLeftRadius: 16,
+                  borderTopRightRadius: 16,
+                  borderBottomLeftRadius: 16,
+                  borderBottomRightRadius: 4, // less rounded "tail"
+                }
+                : {
+                  backgroundColor: "var(--mantine-color-gray-1)",
+                  color: "var(--mantine-color-dark-8)",
+                  borderTopLeftRadius: 16,
+                  borderTopRightRadius: 16,
+                  borderBottomLeftRadius: 4, // less rounded "tail"
+                  borderBottomRightRadius: 16,
+                };
               return (
                 <Group
                   key={idx}
                   justify={isUser ? "flex-end" : "flex-start"}
                 >
                   <Paper
-                    radius="lg"
                     px="md"
                     py="xs"
                     shadow="xs"
                     withBorder={!isUser}
-                    bg={isUser ? "blue.6" : "gray.1"}
-                    c={isUser ? "white" : "dark"}
-                    maw="75%"
+                    style={{
+                      maxWidth: "75%",
+                      ...bubbleStyle,
+                    }}
                   >
                     <Text size="sm">{m.content}</Text>
                   </Paper>
@@ -236,7 +253,7 @@ const ChatPage: React.FC = () => {
                   bg="gray.1"
                   maw="40%"
                 >
-                  <Text size="lg">...</Text>
+                  <Loader color="gray" size="sm" type="dots" />
                 </Paper>
               </Group>
             )}
