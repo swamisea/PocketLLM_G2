@@ -97,7 +97,11 @@ const AppLayout: React.FC = () => {
       </AppShell.Navbar>
 
       {/* MAIN CONTENT */}
-      <AppShell.Main>
+      <AppShell.Main
+        style={{
+          height: "calc(100vh - 60px)", // full viewport minus header
+        }}
+      >
         <Outlet />
       </AppShell.Main>
     </AppShell>

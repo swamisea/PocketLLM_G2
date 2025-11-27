@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef, useState,} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {Badge, Button, Container, Group, Loader, Paper, ScrollArea, Stack, Text, Textarea,} from "@mantine/core";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {useDispatch, useSelector} from "react-redux";
@@ -32,7 +32,9 @@ const ChatPage: React.FC = () => {
   const [status, setStatus] = useState<Status>("idle");
   const [showThinkingBubble, setShowThinkingBubble] = useState(false);
 
+  // This ref points to the ScrollArea viewport – only this should scroll
   const viewportRef = useRef<HTMLDivElement | null>(null);
+  const firstScrollRef = useRef(true);
 
   // Keep Redux selectedId in sync with URL
   useEffect(() => {
@@ -70,14 +72,22 @@ const ChatPage: React.FC = () => {
     }
   }, [effectiveSessionId, isDraftSession, sessionData]);
 
-  // Auto-scroll to bottom whenever messages change or session changes
+  // Auto-scroll to bottom whenever messages/session/thinking bubble change
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
+
+    const behavior: ScrollBehavior = firstScrollRef.current ? "auto" : "smooth";
+    firstScrollRef.current = false;
+
+    // Use native smooth scroll
     requestAnimationFrame(() => {
-      el.scrollTop = el.scrollHeight;
+      el.scrollTo({
+        top: el.scrollHeight,
+        behavior,
+      });
     });
-  }, [messages, effectiveSessionId]);
+  }, [messages, effectiveSessionId, showThinkingBubble]);
 
   const createSessionMutation = useMutation({
     mutationFn: (title?: string) => createSession(title),
@@ -168,14 +178,20 @@ const ChatPage: React.FC = () => {
   const canSend = input.trim().length > 0 && status !== "thinking";
 
   return (
-    <Container p={0} h={"100%"}>
+    <Container
+      size={"sm"}
+      p={0}
+      h="100%"
+      style={{display: "flex", flexDirection: "column"}}
+    >
       {/* Header row - title + status pill */}
       <Group justify="space-between" mb="sm">
         <Text fw={600}>Pocket LLM Chat</Text>
         <Badge
           radius="xl"
-          variant={status === "idle" ? "light" : "filled"}
+          variant={"dot"}
           color={headerStatusColor}
+          style={{ textTransform: 'none' }}
         >
           {headerStatusLabel}
         </Badge>
@@ -186,14 +202,19 @@ const ChatPage: React.FC = () => {
         withBorder
         radius="md"
         p="md"
+        pt={0}
         style={{
-          flex: 1,
+          flex: 1, // fill the remaining vertical space
           display: "flex",
           flexDirection: "column",
-          minHeight: 0,
+          minHeight: 0, // allow inner ScrollArea to shrink/grow
         }}
       >
-        <ScrollArea style={{flex: 1}} viewportRef={viewportRef}>
+        {/* Messages area – ONLY this scrolls */}
+        <ScrollArea
+          style={{flex: 1, minHeight: 0}}
+          viewportRef={viewportRef}
+        >
           <Stack>
             {isLoading && !messages.length && (
               <Text size="sm" c="dimmed">
@@ -210,16 +231,17 @@ const ChatPage: React.FC = () => {
                   borderTopLeftRadius: 16,
                   borderTopRightRadius: 16,
                   borderBottomLeftRadius: 16,
-                  borderBottomRightRadius: 4, // less rounded "tail"
+                  borderBottomRightRadius: 4, // little "tail"
                 }
                 : {
                   backgroundColor: "var(--mantine-color-gray-1)",
                   color: "var(--mantine-color-dark-8)",
                   borderTopLeftRadius: 16,
                   borderTopRightRadius: 16,
-                  borderBottomLeftRadius: 4, // less rounded "tail"
+                  borderBottomLeftRadius: 4,
                   borderBottomRightRadius: 16,
                 };
+
               return (
                 <Group
                   key={idx}
@@ -253,30 +275,29 @@ const ChatPage: React.FC = () => {
                   bg="gray.1"
                   maw="40%"
                 >
-                  <Loader color="gray" size="sm" type="dots" />
+                  <Loader color="gray" size="sm" type="dots"/>
                 </Paper>
               </Group>
             )}
           </Stack>
         </ScrollArea>
-
-        {/* Input area, similar positioning to old page */}
-        <Group align="flex-end" mt="md">
-          <Textarea
-            autosize
-            minRows={1}
-            maxRows={6}
-            style={{flex: 1}}
-            placeholder="Send a message..."
-            value={input}
-            onChange={(e) => setInput(e.currentTarget.value)}
-            onKeyDown={handleKeyDown}
-          />
-          <Button onClick={handleSend} disabled={!canSend}>
-            Send
-          </Button>
-        </Group>
       </Paper>
+      {/* Input area, pinned at bottom of the chat box */}
+      <Group align="flex-end" mt="md">
+        <Textarea
+          autosize
+          minRows={1}
+          maxRows={6}
+          style={{flex: 1}}
+          placeholder="Send a message..."
+          value={input}
+          onChange={(e) => setInput(e.currentTarget.value)}
+          onKeyDown={handleKeyDown}
+        />
+        <Button onClick={handleSend} disabled={!canSend}>
+          Send
+        </Button>
+      </Group>
     </Container>
   );
 };
