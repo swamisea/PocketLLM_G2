@@ -1,40 +1,28 @@
-import React, {useEffect, useMemo, useRef, useState} from "react";
-import {Badge, Button, Container, Group, Loader, Paper, ScrollArea, Stack, Text, Textarea,} from "@mantine/core";
-import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
-import {useDispatch, useSelector} from "react-redux";
-import {useNavigate, useParams} from "react-router";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Badge,
+  Container,
+  Group,
+  Paper,
+  Text,
+} from "@mantine/core";
+import { useSelector, useDispatch } from "react-redux";
+import { useParams } from "react-router";
 
-import type {ChatMessage} from "@common/types/chat";
-import {createSession, getSession} from "../services/sessions.service";
-import {sendChat} from "../services/chat.service";
-import {queryKeys} from "../lib/queryKeys";
-import type {RootState} from "../store";
-import {clearDraftSession, setSelectedSessionId,} from "../store/sessionsSlice";
-
-type Status = "idle" | "thinking";
+import type { RootState } from "../store";
+import { setSelectedSessionId } from "../store/sessionsSlice";
+import ChatMessages from "../components/chat/ChatMessages";
+import ChatInput from "../components/chat/ChatInput";
+import { useChat } from "../hooks/useChat";
 
 const ChatPage: React.FC = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const {sessionId: urlSessionId} = useParams<{ sessionId?: string }>();
+  const { sessionId: urlSessionId } = useParams<{ sessionId?: string }>();
 
-  const {selectedId, draft} = useSelector(
+  const { selectedId, draft } = useSelector(
     (state: RootState) => state.sessions
   );
   const effectiveSessionId = selectedId ?? urlSessionId;
-
-  const isDraftSession =
-    !!draft && effectiveSessionId === draft.id && draft.local;
-
-  const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [status, setStatus] = useState<Status>("idle");
-  const [showThinkingBubble, setShowThinkingBubble] = useState(false);
-
-  // This ref points to the ScrollArea viewport – only this should scroll
-  const viewportRef = useRef<HTMLDivElement | null>(null);
-  const firstScrollRef = useRef(true);
 
   // Keep Redux selectedId in sync with URL
   useEffect(() => {
@@ -45,155 +33,44 @@ const ChatPage: React.FC = () => {
     }
   }, [dispatch, urlSessionId]);
 
-  // Load messages when a persisted session is selected
-  const {data: sessionData, isLoading: loadingSession} = useQuery({
-    queryKey:
-      effectiveSessionId && !isDraftSession
-        ? queryKeys.sessions.byId(effectiveSessionId)
-        : ["session", "none"],
-    queryFn: () => getSession(effectiveSessionId as string),
-    enabled: !!effectiveSessionId && !isDraftSession,
+  const { messages, isThinking, isLoadingSession, sendMessage } = useChat({
+    effectiveSessionId,
+    draft,
   });
 
-  useEffect(() => {
-    if (!effectiveSessionId) {
-      setMessages([]);
-      return;
-    }
-
-    if (isDraftSession) {
-      // For a new draft, start empty
-      setMessages([]);
-      return;
-    }
-
-    if (sessionData?.messages) {
-      setMessages(sessionData.messages);
-    }
-  }, [effectiveSessionId, isDraftSession, sessionData]);
-
-  // Auto-scroll to bottom whenever messages/session/thinking bubble change
-  useEffect(() => {
-    const el = viewportRef.current;
-    if (!el) return;
-
-    const behavior: ScrollBehavior = firstScrollRef.current ? "auto" : "smooth";
-    firstScrollRef.current = false;
-
-    // Use native smooth scroll
-    requestAnimationFrame(() => {
-      el.scrollTo({
-        top: el.scrollHeight,
-        behavior,
-      });
-    });
-  }, [messages, effectiveSessionId, showThinkingBubble]);
-
-  const createSessionMutation = useMutation({
-    mutationFn: (title?: string) => createSession(title),
-  });
-
-  const chatMutation = useMutation({
-    mutationFn: ({
-                   message,
-                   sessionId,
-                 }: {
-      message: string;
-      sessionId?: string;
-    }) => sendChat(message, sessionId),
-  });
+  const [input, setInput] = useState("");
 
   const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed) return;
-
     setInput("");
-
-    const userMessage: ChatMessage = {
-      role: "user",
-      content: trimmed,
-    };
-
-    // Show user message immediately
-    setMessages((prev) => [...prev, userMessage]);
-    setStatus("thinking");
-    setShowThinkingBubble(true);
-
-    try {
-      let targetSessionId = effectiveSessionId;
-
-      // If this is a draft / no-session yet, create it first
-      if (!targetSessionId || isDraftSession) {
-        const titleFromMessage =
-          trimmed.length > 40 ? `${trimmed.slice(0, 40)}…` : trimmed;
-        const session = await createSessionMutation.mutateAsync(
-          draft?.title || titleFromMessage
-        );
-        targetSessionId = session.id;
-
-        // Clear draft and update selection + URL and sessions list
-        dispatch(clearDraftSession());
-        dispatch(setSelectedSessionId(session.id));
-        navigate(`/sessions/${session.id}`, {replace: true});
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.sessions.list(),
-        });
-      }
-
-      // Now send the chat message
-      const result = await chatMutation.mutateAsync({
-        message: trimmed,
-        sessionId: targetSessionId,
-      });
-
-      setShowThinkingBubble(false);
-      setMessages((prev) => [...prev, result.reply]);
-    } catch (e) {
-      // On error, hide thinking bubble but keep user message in history
-      setShowThinkingBubble(false);
-      console.error(e);
-    } finally {
-      setStatus("idle");
-    }
+    await sendMessage(trimmed);
   };
-
-  const handleKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (
-    e
-  ) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const isLoading = loadingSession || createSessionMutation.isPending;
 
   const headerStatusLabel = useMemo(
-    () => (status === "idle" ? "Idle" : "Thinking…"),
-    [status]
+    () => (isThinking ? "Thinking…" : "Idle"),
+    [isThinking]
   );
 
-  const headerStatusColor = status === "idle" ? "gray" : "yellow";
-
-  const canSend = input.trim().length > 0 && status !== "thinking";
+  const canSend = input.trim().length > 0 && !isThinking;
 
   return (
     <Container
-      size={"sm"}
+      size="sm"
       p={0}
       h="100%"
-      style={{display: "flex", flexDirection: "column"}}
+      style={{ display: "flex", flexDirection: "column" }}
     >
       {/* Header row - title + status pill */}
       <Group justify="space-between" mb="sm">
         <Text fw={600}>Pocket LLM Chat</Text>
         <Badge
           radius="xl"
-          variant={"dot"}
-          color={headerStatusColor}
-          style={{ textTransform: 'none' }}
+          variant="dot"
+          color={isThinking ? "yellow" : "gray"}
+          style={{ textTransform: "none" }}
         >
-          {headerStatusLabel}
+          {(isThinking ? "Thinking" : "Idle")}
         </Badge>
       </Group>
 
@@ -204,100 +81,26 @@ const ChatPage: React.FC = () => {
         p="md"
         pt={0}
         style={{
-          flex: 1, // fill the remaining vertical space
+          flex: 1, // fill remaining vertical space
           display: "flex",
           flexDirection: "column",
-          minHeight: 0, // allow inner ScrollArea to shrink/grow
+          minHeight: 0, // allow ChatMessages ScrollArea to flex
         }}
       >
-        {/* Messages area – ONLY this scrolls */}
-        <ScrollArea
-          style={{flex: 1, minHeight: 0}}
-          viewportRef={viewportRef}
-        >
-          <Stack>
-            {isLoading && !messages.length && (
-              <Text size="sm" c="dimmed">
-                Loading conversation…
-              </Text>
-            )}
-
-            {messages.map((m, idx) => {
-              const isUser = m.role === "user";
-              const bubbleStyle = isUser
-                ? {
-                  backgroundColor: "var(--mantine-color-blue-6)",
-                  color: "white",
-                  borderTopLeftRadius: 16,
-                  borderTopRightRadius: 16,
-                  borderBottomLeftRadius: 16,
-                  borderBottomRightRadius: 4, // little "tail"
-                }
-                : {
-                  backgroundColor: "var(--mantine-color-gray-1)",
-                  color: "var(--mantine-color-dark-8)",
-                  borderTopLeftRadius: 16,
-                  borderTopRightRadius: 16,
-                  borderBottomLeftRadius: 4,
-                  borderBottomRightRadius: 16,
-                };
-
-              return (
-                <Group
-                  key={idx}
-                  justify={isUser ? "flex-end" : "flex-start"}
-                >
-                  <Paper
-                    px="md"
-                    py="xs"
-                    shadow="xs"
-                    withBorder={!isUser}
-                    style={{
-                      maxWidth: "75%",
-                      ...bubbleStyle,
-                    }}
-                  >
-                    <Text size="sm">{m.content}</Text>
-                  </Paper>
-                </Group>
-              );
-            })}
-
-            {/* 3-dot loading bubble when model is thinking */}
-            {showThinkingBubble && (
-              <Group justify="flex-start">
-                <Paper
-                  radius="lg"
-                  px="md"
-                  py="xs"
-                  shadow="xs"
-                  withBorder
-                  bg="gray.1"
-                  maw="40%"
-                >
-                  <Loader color="gray" size="sm" type="dots"/>
-                </Paper>
-              </Group>
-            )}
-          </Stack>
-        </ScrollArea>
-      </Paper>
-      {/* Input area, pinned at bottom of the chat box */}
-      <Group align="flex-end" mt="md">
-        <Textarea
-          autosize
-          minRows={1}
-          maxRows={6}
-          style={{flex: 1}}
-          placeholder="Send a message..."
-          value={input}
-          onChange={(e) => setInput(e.currentTarget.value)}
-          onKeyDown={handleKeyDown}
+        <ChatMessages
+          messages={messages}
+          isThinking={isThinking}
+          isLoading={isLoadingSession}
         />
-        <Button onClick={handleSend} disabled={!canSend}>
-          Send
-        </Button>
-      </Group>
+      </Paper>
+
+      {/* Input area pinned at the bottom */}
+      <ChatInput
+        value={input}
+        onChange={setInput}
+        onSend={handleSend}
+        disabled={!canSend}
+      />
     </Container>
   );
 };

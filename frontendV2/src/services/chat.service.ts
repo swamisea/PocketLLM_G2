@@ -1,5 +1,5 @@
+import { ChatMessage } from "@common/types/chat";
 import { apiClient } from "../lib/apiClient";
-import type { ChatMessage } from "../hooks/useChat";
 
 export interface SendChatResponse {
   reply: ChatMessage;
