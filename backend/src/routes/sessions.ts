@@ -5,12 +5,13 @@ import {
   getSession,
   appendMessage,
 } from "../services/sessions.service";
+import { authenticate} from "../middleware/auth.middleware";
 
 const router = Router();
 
-router.get("/", listSessions);
-router.post("/", createSession);
-router.get("/:id", getSession);
-router.post("/:id/messages", appendMessage);
+router.get("/", authenticate, listSessions);
+router.post("/", authenticate, createSession);
+router.get("/:id", authenticate, getSession);
+router.post("/:id/messages", authenticate, appendMessage);
 
 export default router;
