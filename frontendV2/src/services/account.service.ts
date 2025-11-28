@@ -7,7 +7,8 @@ export interface LoginUserRequest {
 
 export interface LoginUserResponse {
   success: boolean;
-  user?: {
+  token: string;
+  user: {
     id: string;
     email: string;
     username?: string;
@@ -23,7 +24,8 @@ export interface CreateUserRequest {
 
 export interface CreateUserResponse {
   success: boolean;
-  user?: {
+  token: string;
+  user: {
     id: string;
     email: string;
     username?: string;

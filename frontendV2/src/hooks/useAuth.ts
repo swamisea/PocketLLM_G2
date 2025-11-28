@@ -16,8 +16,9 @@ export function useAuth() {
     mutationFn: loginUser,
     onSuccess: (data) => {
       if (data.success && data.user) {
-        setUserCookie(data.user);
-        dispatch(setUser(data.user));
+        const userObj = data.user
+        setUserCookie(userObj, data.token);
+        dispatch(setUser(userObj));
       }
     },
   });
@@ -26,8 +27,9 @@ export function useAuth() {
     mutationFn: createUser,
     onSuccess: (data) => {
       if (data.success && data.user) {
-        setUserCookie(data.user);
-        dispatch(setUser(data.user));
+        const userObj = data.user
+        setUserCookie(userObj, data.token);
+        dispatch(setUser(userObj));
       }
     },
   });
