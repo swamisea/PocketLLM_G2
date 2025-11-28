@@ -46,9 +46,9 @@ const LoginPage: React.FC = () => {
           flex: 1,
           backgroundColor:
             theme.colorScheme === "dark"
-              ? theme.colors.dark[9]
-              : theme.colors.dark[8],
-          color: theme.white,
+              ? theme.colors.dark
+              : theme.colors.white,
+          color: theme.dark,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
