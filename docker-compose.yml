@@ -52,6 +52,7 @@ services:
     entrypoint: [ "/bin/sh", "-c" ]
     command: >
       "ollama pull gemma3:270m &&
+      ollama pull qwen3:0.6b &&
        echo 'Models ready'"
 
   backend:
@@ -87,23 +88,6 @@ services:
       - ./frontend/src:/app/src
       - ./frontend/index.html:/app/index.html
       - ./frontend/vite.config.ts:/app/vite.config.ts
-#      - /app/node_modules
-#    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
-
-#  frontend:
-#    container_name: pocketllm-frontend
-#    image: node:22-alpine
-#    working_dir: /app
-#    volumes:
-#      - ./frontend:/app
-#      - /app/node_modules
-#    ports:
-#      - "5173:5173"
-#    env_file:
-#      - ./frontend/.env.docker
-#    command: [ "npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173" ]
-#    depends_on:
-#      - backend
 
 
 volumes:

@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 import { Request, Response } from "express";
 import argon2 from 'argon2';
 import { getCollection } from "./database.service";
-import { CreateUserRequest, User, LoginUserRequest } from "../../../common/src/types/account";
+import { CreateUserRequest, LoginUserRequest } from "@common/types/account";
 import { generateJWTToken} from "../utils/jwt.util";
 
 interface InputFieldValidation {
@@ -171,10 +171,21 @@ export async function createUser(req: Request, res: Response) {
         };
 
         const result = await userCollection.insertOne(newUser);
+        const token = generateJWTToken(
+          result.insertedId.toString(),
+          newUser.email,
+          newUser.username
+        )
         res.status(201).json({ 
             success: true, 
             message: "User created successfully",
-            userId: result.insertedId.toString()
+            userId: result.insertedId.toString(),
+            token: token,
+            user: {
+                id: result.insertedId.toString(),
+                email: newUser.email,
+                username: newUser.username
+            }
         });
     } catch (error: any) {
         if (error.code === 11000) {

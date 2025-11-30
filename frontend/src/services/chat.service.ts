@@ -1,17 +1,13 @@
-import type { ChatMessage } from "@common/types/chat";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+import { SendChatResponse } from "@common/types/chat";
+import { apiClient } from "../lib/apiClient";
 
 export async function sendChat(
   message: string,
   sessionId?: string
-): Promise<{ reply: ChatMessage; sessionId?: string }> {
-  const res = await fetch(`${API_URL}/api/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, sessionId }),
+): Promise<SendChatResponse> {
+  const { data } = await apiClient.post<SendChatResponse>("/api/chat", {
+    message,
+    sessionId,
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  return data as { reply: ChatMessage; sessionId?: string };
+  return data;
 }

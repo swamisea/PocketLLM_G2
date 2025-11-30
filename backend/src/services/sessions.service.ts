@@ -4,17 +4,21 @@ import { randomUUID } from "crypto";
 import { getCollection } from "../services/database.service";
 import type { ChatMessage } from "@common/types/chat";
 import type { Session, SessionItem } from "@common/types/session";
+import {AuthRequest} from "../middleware/auth.middleware";
 
-export async function listSessions(req: Request, res: Response) {
+export async function listSessions(req: AuthRequest, res: Response) {
   try {
     const sessions = getCollection<Session>("sessions");
     const docs = await sessions
-      .find({}, { projection: { messages: 0 } })
+      .find({
+        userId: req.user!.id,
+      }, { projection: { messages: 0 } })
       .sort({ createdAt: -1 })
       .toArray();
 
     const items: SessionItem[] = docs.map((d) => ({
       id: d._id.toString(),
+      userId: d.userId,
       title: d.title,
       createdAt: d.createdAt,
     }));
@@ -25,15 +29,16 @@ export async function listSessions(req: Request, res: Response) {
 }
 
 export async function createSession(
-  req: Request<{}, {}, { title?: string }>,
+  req: AuthRequest,
   res: Response
 ) {
   try {
-    const { title } = req.body;
+    const { title } = req.body as { title?: string };
     const sessions = getCollection<Session>("sessions");
 
     const doc: Omit<Session, "id"> = {
       title: title || "New chat",
+      userId: req.user!.id,
       createdAt: new Date().toISOString(),
       messages: [] as ChatMessage[],
     };
@@ -60,6 +65,7 @@ export async function getSession(req: Request, res: Response) {
 
     const session: Session = {
       id: raw._id.toString(),
+      userId: raw.userId,
       title: raw.title,
       createdAt: raw.createdAt,
       messages: (raw.messages || []) as ChatMessage[],
