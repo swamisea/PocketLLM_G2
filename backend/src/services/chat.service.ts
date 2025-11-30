@@ -1,11 +1,22 @@
 import { randomUUID } from "crypto";
 import { ChatOllama } from "@langchain/ollama";
-import { getCollection } from "../services/database.service";
+import { getCollection } from "./database.service";
 import { ObjectId } from "mongodb";
-import { Request, Response } from "express";
+import { Response } from "express";
 import type { ChatMessage } from "@common/types/chat";
 import type { Session } from "@common/types/session";
 import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { getCachedResponse, setCachedResponse} from "../utils/cache.util";
+import {AuthRequest} from "../middleware/auth.middleware";
+
+interface ChatRequest {
+  message?: string;
+  messageObj?: ChatMessage;
+  sessionId?: string;
+  systemPrompt?: string;
+  model?: string;
+  temperature?: number;
+}
 
 // --------------------------
 // Config / constants
@@ -14,6 +25,8 @@ import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages
 const OLLAMA_BASE_URL = process.env.OLLAMA_URL;
 const DEFAULT_CHAT_MODEL = process.env.OLLAMA_MODEL ?? "gemma3:270m";
 const DEFAULT_CHAT_TEMPERATURE = 0.7;
+
+const CACHE_TTL = parseInt(process.env.CACHE_TTL || '600');
 
 // Title generation uses a fixed model + temperature
 const TITLE_MODEL_NAME = DEFAULT_CHAT_MODEL;
@@ -141,25 +154,17 @@ async function getSessionHistory(
 // --------------------------
 
 export async function handleChat(
-  req: Request<
-    {},
-    {},
-    {
-      message?: string;
-      messageObj?: ChatMessage;
-      sessionId?: string;
-      systemPrompt?: string;
-      model?: string;
-      temperature?: number;
-    }
-  >,
+  req: AuthRequest,
   res: Response
 ) {
   const { message, messageObj, sessionId, systemPrompt, model, temperature } =
-    req.body;
+    req.body as ChatRequest;
 
   if ((!message || typeof message !== "string") && !messageObj) {
-    return res.status(400).json({ error: "Missing message" });
+    return res.status(400).json({
+      success: false,
+      error: "Missing message"
+    });
   }
 
   // Normalize user message into a ChatMessage object
@@ -174,6 +179,7 @@ export async function handleChat(
 
   try {
     const sessions = getCollection<Session>("sessions");
+    const userId = req.user!.id
 
     let sid = sessionId;
     let isNewSession = false;
@@ -182,20 +188,40 @@ export async function handleChat(
     let priorMessages: ChatMessage[] = [];
     if (sid) {
       priorMessages = await getSessionHistory(sessions, sid);
+    } else { // 2. If no sessionId -> create new session, generate title using default model
+      const title = await generateTitleFromMessage(userMsg.content);
+      const newSession: Omit<Session, "id"> = {
+        title,
+        userId,
+        createdAt: new Date().toISOString(),
+        messages: [],
+      };
+      const result = await sessions.insertOne(newSession as any);
+      sid = result.insertedId.toString();
+      isNewSession = true;
     }
 
-    // 2. Build LangChain messages with systemPrompt + history + current message
-    const chatMessages = buildChatMessages({
-      priorMessages,
-      userMsg,
-      systemPrompt,
-    });
+    let assistantText
+    const cachedResponse = await getCachedResponse(userId, sid, userMsg.content);
+    if (cachedResponse) {
+      assistantText = cachedResponse;
+      console.log(`Cache Hit for user ${userId} and for session ${sessionId}`);
+    } else {
+      console.log("Cache Miss. Invoking LLM for response")
+      // 2. Build LangChain messages with systemPrompt + history + current message
+      const chatMessages = buildChatMessages({
+        priorMessages,
+        userMsg,
+        systemPrompt,
+      });
 
-    // 3. Create per-request chat model (overrides model/temp if provided)
-    const chatModel = createChatModel({ model, temperature });
+      // 3. Create per-request chat model (overrides model/temp if provided)
+      const chatModel = createChatModel({ model, temperature });
 
-    const response = await chatModel.invoke(chatMessages);
-    const assistantText = extractContent(response);
+      const response = await chatModel.invoke(chatMessages);
+      assistantText = extractContent(response);
+      await setCachedResponse(userId, sid, userMsg.content, assistantText, CACHE_TTL);
+    }
 
     const reply: ChatMessage = {
       id: randomUUID(),
@@ -203,21 +229,6 @@ export async function handleChat(
       content: assistantText,
       createdAt: new Date().toISOString(),
     };
-
-    // 4. If no sessionId -> create new session, generate title using default model
-    if (!sid) {
-      const title = await generateTitleFromMessage(userMsg.content);
-
-      const newSession: Omit<Session, "id"> = {
-        title,
-        createdAt: new Date().toISOString(),
-        messages: [],
-      };
-
-      const result = await sessions.insertOne(newSession as any);
-      sid = result.insertedId.toString();
-      isNewSession = true;
-    }
 
     // 5. Persist both user + assistant messages
     await sessions.updateOne(

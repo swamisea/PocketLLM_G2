@@ -52,6 +52,7 @@ services:
     entrypoint: [ "/bin/sh", "-c" ]
     command: >
       "ollama pull gemma3:270m &&
+      ollama pull qwen3:0.6b &&
        echo 'Models ready'"
 
   backend:
