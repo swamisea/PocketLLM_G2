@@ -89,38 +89,6 @@ services:
       - ./frontend/index.html:/app/index.html
       - ./frontend/vite.config.ts:/app/vite.config.ts
 
-  frontendv2:
-    build: ./frontendV2
-    container_name: pocketllm-frontendv2
-    restart: unless-stopped
-    depends_on:
-      - backend
-    env_file:
-      - ./frontendV2/.env.docker
-    ports:
-      - "5174:5174"
-    volumes:
-      - ./frontendV2/src:/app/src
-      - ./frontendV2/index.html:/app/index.html
-      - ./frontendV2/vite.config.ts:/app/vite.config.ts
-#      - /app/node_modules
-#    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
-
-#  frontend:
-#    container_name: pocketllm-frontend
-#    image: node:22-alpine
-#    working_dir: /app
-#    volumes:
-#      - ./frontend:/app
-#      - /app/node_modules
-#    ports:
-#      - "5173:5173"
-#    env_file:
-#      - ./frontend/.env.docker
-#    command: [ "npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173" ]
-#    depends_on:
-#      - backend
-
 
 volumes:
   mongo_data:

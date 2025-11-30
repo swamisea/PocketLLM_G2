@@ -1,28 +1,36 @@
-import type { SessionItem, Session } from "@common/types/session";
+import { apiClient } from "../lib/apiClient";
+import {ChatMessage} from "@common/types/chat";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+export interface SessionItem {
+  id: string;
+  title?: string;
+  createdAt?: string;
+}
+
+export interface Session extends SessionItem {
+  messages?: ChatMessage[];
+}
+
+export type LocalSessionItem = SessionItem & { local?: true };
 
 export async function listSessions(): Promise<SessionItem[]> {
-  const res = await fetch(`${API_URL}/api/sessions`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  return data.sessions || [];
+  const { data } = await apiClient.get<{ sessions: SessionItem[] }>(
+    "/api/sessions"
+  );
+  return data.sessions ?? [];
 }
 
 export async function createSession(title?: string): Promise<Session> {
-  const res = await fetch(`${API_URL}/api/sessions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title }),
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  return data.session as Session;
+  const { data } = await apiClient.post<{ session: Session }>(
+    "/api/sessions",
+    { title }
+  );
+  return data.session;
 }
 
 export async function getSession(sessionId: string): Promise<Session> {
-  const res = await fetch(`${API_URL}/api/sessions/${sessionId}`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  return data.session as Session;
+  const { data } = await apiClient.get<{ session: Session }>(
+    `/api/sessions/${sessionId}`
+  );
+  return data.session;
 }

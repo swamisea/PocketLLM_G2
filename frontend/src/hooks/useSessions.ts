@@ -1,32 +1,17 @@
-import { useCallback, useReducer } from "react";
-import type { SessionItem } from "@common/types/session";
+import { useReducer, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "../lib/queryKeys";
+import {createSession, listSessions, LocalSessionItem, Session} from "../services/sessions.service";
 
-export type LocalSessionItem = SessionItem & { local?: true };
 
 type State = {
   currentSessionId?: string;
   localSessions: LocalSessionItem[];
-  localSessionHasMessages: Record<string, boolean>;
-  sessionsReloadKey: number;
-  clearSignal: number;
 };
 
 type Action =
   | { type: "select"; id?: string }
-  | { type: "createLocal"; session: LocalSessionItem }
-  | { type: "clearDraft" }
-  | { type: "persisted"; tempId?: string; serverId: string }
-  | { type: "markDraftHasMessages"; id: string; hasMessages: boolean }
-  | { type: "bumpReload" }
-  | { type: "bumpClearSignal" };
-
-const initial: State = {
-  currentSessionId: undefined,
-  localSessions: [],
-  localSessionHasMessages: {},
-  sessionsReloadKey: 0,
-  clearSignal: 0,
-};
+  | { type: "createLocal"; session: LocalSessionItem };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -35,84 +20,55 @@ function reducer(state: State, action: Action): State {
     case "createLocal":
       return {
         ...state,
-        localSessions: [action.session, ...state.localSessions],
         currentSessionId: action.session.id,
+        localSessions: [action.session, ...state.localSessions],
       };
-    case "clearDraft":
-      return { ...state, clearSignal: state.clearSignal + 1 };
-    case "persisted": {
-      const nextLocal = action.tempId
-        ? state.localSessions.filter((s) => s.id !== action.tempId)
-        : state.localSessions;
-      const nextHasMessages = { ...state.localSessionHasMessages };
-      if (action.tempId) delete nextHasMessages[action.tempId];
-      const nextCurrent =
-        !action.tempId || state.currentSessionId === action.tempId
-          ? action.serverId
-          : state.currentSessionId;
-      return {
-        ...state,
-        localSessions: nextLocal,
-        localSessionHasMessages: nextHasMessages,
-        currentSessionId: nextCurrent,
-        sessionsReloadKey: state.sessionsReloadKey + 1,
-      };
-    }
-    case "markDraftHasMessages":
-      return {
-        ...state,
-        localSessionHasMessages: {
-          ...state.localSessionHasMessages,
-          [action.id]: action.hasMessages,
-        },
-      };
-    case "bumpReload":
-      return { ...state, sessionsReloadKey: state.sessionsReloadKey + 1 };
-    case "bumpClearSignal":
-      return { ...state, clearSignal: state.clearSignal + 1 };
     default:
       return state;
   }
 }
 
-export function useSessions() {
-  const [state, dispatch] = useReducer(reducer, initial);
+const initialState: State = {
+  currentSessionId: undefined,
+  localSessions: [],
+};
 
-  const select = useCallback(
-    (id?: string) => dispatch({ type: "select", id }),
-    []
-  );
-  const createLocal = useCallback(
-    (session: LocalSessionItem) => dispatch({ type: "createLocal", session }),
-    []
-  );
-  const clearDraft = useCallback(() => dispatch({ type: "clearDraft" }), []);
-  const persisted = useCallback(
-    (tempId: string | undefined, serverId: string) =>
-      dispatch({ type: "persisted", tempId, serverId }),
-    []
-  );
-  const markDraftHasMessages = useCallback(
-    (id: string, hasMessages: boolean) =>
-      dispatch({ type: "markDraftHasMessages", id, hasMessages }),
-    []
-  );
-  const bumpReload = useCallback(() => dispatch({ type: "bumpReload" }), []);
-  const bumpClearSignal = useCallback(
-    () => dispatch({ type: "bumpClearSignal" }),
-    []
-  );
+export function useSessions() {
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const queryClient = useQueryClient();
+
+  const sessionsQuery = useQuery({
+    queryKey: queryKeys.sessions.list(),
+    queryFn: listSessions,
+  });
+
+  const createSessionMutation = useMutation({
+    mutationFn: (title?: string) => createSession(title),
+    onSuccess: (session: Session) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.sessions.list(),
+      });
+      dispatch({ type: "select", id: session.id });
+    },
+  });
+
+  const select = useCallback((id?: string) => {
+    dispatch({ type: "select", id });
+  }, []);
+
+  const createLocal = useCallback((session: LocalSessionItem) => {
+    dispatch({ type: "createLocal", session });
+  }, []);
 
   return {
     state,
+    serverSessions: sessionsQuery.data ?? [],
+    isLoading: sessionsQuery.isLoading,
     actions: {
       select,
       createLocal,
-      clearDraft,
-      persisted,
-      markDraftHasMessages,
-      bumpReload,
-      bumpClearSignal,
+      createSession: (title?: string) =>
+        createSessionMutation.mutate(title),
     },
   } as const;
 }
