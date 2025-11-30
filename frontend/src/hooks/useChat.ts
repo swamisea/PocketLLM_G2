@@ -3,7 +3,7 @@ import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {useDispatch} from "react-redux";
 import {useNavigate} from "react-router";
 
-import type {ChatMessage} from "@common/types/chat";
+import type {ChatMessage, ChatRequest} from "@common/types/chat";
 import {createSession, getSession} from "../services/sessions.service";
 import {sendChat} from "../services/chat.service";
 import {queryKeys} from "../lib/queryKeys";
@@ -59,10 +59,7 @@ export function useChat({
     mutationFn: ({
                    message,
                    sessionId,
-                 }: {
-      message: string;
-      sessionId?: string;
-    }) => sendChat(message, sessionId),
+                 }: ChatRequest) => sendChat(message, sessionId),
   });
 
   const sendMessage = async (text: string) => {

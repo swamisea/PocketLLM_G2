@@ -1,4 +1,4 @@
-import type { User } from "../store/userSlice";
+import { User } from "@common/types/account";
 
 const USER_COOKIE = "pll_user";
 const TOKEN_COOKIE = "pll_token";

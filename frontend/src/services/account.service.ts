@@ -1,37 +1,5 @@
+import { CreateUserRequest, CreateUserResponse, LoginUserRequest, LoginUserResponse } from "@common/types/account";
 import { apiClient } from "../lib/apiClient";
-
-export interface LoginUserRequest {
-  email: string;
-  password: string;
-}
-
-export interface LoginUserResponse {
-  success: boolean;
-  token: string;
-  user: {
-    id: string;
-    email: string;
-    username?: string;
-  };
-  message?: string;
-}
-
-export interface CreateUserRequest {
-  email: string;
-  username: string;
-  password: string;
-}
-
-export interface CreateUserResponse {
-  success: boolean;
-  token: string;
-  user: {
-    id: string;
-    email: string;
-    username?: string;
-  };
-  message?: string;
-}
 
 export async function createUser(
   payload: CreateUserRequest

@@ -6,3 +6,17 @@ export interface ChatMessage {
   content: string;
   createdAt?: string; // ISO string
 }
+
+export interface SendChatResponse {
+  reply: ChatMessage;
+  sessionId?: string;
+}
+
+export interface ChatRequest {
+  message: string;
+  messageObj?: ChatMessage;
+  sessionId?: string;
+  systemPrompt?: string;
+  model?: string;
+  temperature?: number;
+}

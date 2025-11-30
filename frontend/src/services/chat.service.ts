@@ -1,10 +1,5 @@
-import { ChatMessage } from "@common/types/chat";
+import { SendChatResponse } from "@common/types/chat";
 import { apiClient } from "../lib/apiClient";
-
-export interface SendChatResponse {
-  reply: ChatMessage;
-  sessionId?: string;
-}
 
 export async function sendChat(
   message: string,

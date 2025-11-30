@@ -3,20 +3,11 @@ import { ChatOllama } from "@langchain/ollama";
 import { getCollection } from "./database.service";
 import { ObjectId } from "mongodb";
 import { Response } from "express";
-import type { ChatMessage } from "@common/types/chat";
+import type {ChatMessage, ChatRequest} from "@common/types/chat";
 import type { Session } from "@common/types/session";
 import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getCachedResponse, setCachedResponse} from "../utils/cache.util";
 import {AuthRequest} from "../middleware/auth.middleware";
-
-interface ChatRequest {
-  message?: string;
-  messageObj?: ChatMessage;
-  sessionId?: string;
-  systemPrompt?: string;
-  model?: string;
-  temperature?: number;
-}
 
 // --------------------------
 // Config / constants

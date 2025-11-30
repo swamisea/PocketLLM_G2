@@ -1,17 +1,5 @@
+import {Session, SessionItem } from "@common/types/session";
 import { apiClient } from "../lib/apiClient";
-import {ChatMessage} from "@common/types/chat";
-
-export interface SessionItem {
-  id: string;
-  title?: string;
-  createdAt?: string;
-}
-
-export interface Session extends SessionItem {
-  messages?: ChatMessage[];
-}
-
-export type LocalSessionItem = SessionItem & { local?: true };
 
 export async function listSessions(): Promise<SessionItem[]> {
   const { data } = await apiClient.get<{ sessions: SessionItem[] }>(
