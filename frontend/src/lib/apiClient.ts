@@ -1,8 +1,6 @@
-// src/lib/apiClient.ts
 import axios from "axios";
 import {clearUserCookie} from "../utils/authCookies";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+import { env } from "../config/env";
 
 function getTokenFromCookie(cookieName = "pll_token"): string | null {
   if (typeof document === "undefined") return null;
@@ -15,7 +13,7 @@ function getTokenFromCookie(cookieName = "pll_token"): string | null {
 }
 
 export const apiClient = axios.create({
-  baseURL: API_URL || undefined,
+  baseURL: env.apiUrl || undefined,
   headers: {
     "Content-Type": "application/json",
   },

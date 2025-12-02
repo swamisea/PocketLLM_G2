@@ -1,6 +1,5 @@
 import dotenv from "dotenv";
 import * as mongoDB from "mongodb";
-import { randomUUID } from "crypto";
 import { Request, Response } from "express";
 import argon2 from 'argon2';
 import { getCollection } from "./database.service";
@@ -91,6 +90,19 @@ function validateEmail(email: string): InputFieldValidation {
         valid: errors.length === 0,
         errors
     };
+}
+
+function getGuestEnv() {
+    const email = process.env.GUEST_EMAIL;
+    const username = process.env.GUEST_USERNAME;
+    const password = process.env.GUEST_PASSWORD;
+    const name = process.env.GUEST_NAME;
+    return { email, username, password, name };
+}
+
+function isGuestConfigured() {
+    const { email, username, password } = getGuestEnv();
+    return Boolean(email && username && password);
 }
 
 function validatePayload(payload: CreateUserRequest): UserAccountValidation {
@@ -253,6 +265,62 @@ export async function loginUser(req: Request, res: Response) {
         res.status(500).json({
             success: false,
             message: "Login failed"
+        });
+    }
+}
+
+export async function guestAvailable(_req: Request, res: Response) {
+    return res.status(200).json({ available: isGuestConfigured() });
+}
+
+export async function guestLogin(_req: Request, res: Response) {
+    if (!isGuestConfigured()) {
+        return res.status(404).json({
+            success: false,
+            message: "Guest login not configured"
+        });
+    }
+
+    const { email, username, password, name } = getGuestEnv();
+    const USERDETAILS_COLL = process.env.USER_DETAILS_COLLECTION_NAME || "";
+    const userCollection = getCollection(USERDETAILS_COLL);
+
+    try {
+        let user = await userCollection.findOne({ email }) as any;
+
+        if (!user) {
+            const hashedPassword = await hashPassword(password!);
+            const newUser: any = {
+                email,
+                username,
+                password: hashedPassword,
+                createdAt: new Date().toISOString(),
+            };
+            if (name) newUser.name = name;
+
+            const result = await userCollection.insertOne(newUser);
+            user = { ...newUser, _id: result.insertedId };
+        }
+
+        const token = generateJWTToken(
+            user._id.toString(),
+            user.email,
+            user.username
+        )
+        return res.status(200).json({
+            success: true,
+            message: "Guest login successful",
+            token: token,
+            user: {
+                id: user._id.toString(),
+                email: user.email,
+                username: user.username
+            }
+        });
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            message: error.message || "Guest login failed"
         });
     }
 }
