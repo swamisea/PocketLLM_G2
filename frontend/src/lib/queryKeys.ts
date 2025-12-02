@@ -1,6 +1,7 @@
 export const queryKeys = {
   account: {
     me: ["account", "me"] as const,
+    guestAvailable: ["account", "guest-available"] as const,
   },
   sessions: {
     all: ["sessions"] as const,

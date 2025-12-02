@@ -20,3 +20,17 @@ export async function loginUser(
   );
   return data;
 }
+
+export async function guestAvailable(): Promise<{ available: boolean }> {
+  const { data } = await apiClient.get<{ available: boolean }>(
+    "/api/account/guest"
+  );
+  return data;
+}
+
+export async function guestLogin(): Promise<LoginUserResponse> {
+  const { data } = await apiClient.post<LoginUserResponse>(
+    "/api/account/guest-login"
+  );
+  return data;
+}

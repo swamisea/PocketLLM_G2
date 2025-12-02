@@ -1,11 +1,11 @@
 import { useCallback } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../store";
 import { setUser, clearUser } from "../store/userSlice";
 import { setUserCookie, clearUserCookie } from "../utils/authCookies";
 import { queryKeys } from "../lib/queryKeys";
-import {createUser, loginUser } from "../services/account.service";
+import {createUser, loginUser, guestLogin, guestAvailable } from "../services/account.service";
 
 export function useAuth() {
   const dispatch = useDispatch();
@@ -21,6 +21,23 @@ export function useAuth() {
         dispatch(setUser(userObj));
       }
     },
+  });
+
+  const guestLoginMutation = useMutation({
+    mutationKey: [queryKeys.account.me],
+    mutationFn: guestLogin,
+    onSuccess: (data) => {
+      if (data.success && data.user) {
+        const userObj = data.user
+        setUserCookie(userObj, data.token);
+        dispatch(setUser(userObj));
+      }
+    },
+  });
+
+  const guestAvailableQuery = useQuery({
+    queryKey: queryKeys.account.guestAvailable,
+    queryFn: guestAvailable,
   });
 
   const signupMutation = useMutation({
@@ -43,6 +60,8 @@ export function useAuth() {
     user,
     isAuthenticated: !!user,
     loginMutation,
+    guestLoginMutation,
+    guestAvailableQuery,
     signupMutation,
     logout,
   };
