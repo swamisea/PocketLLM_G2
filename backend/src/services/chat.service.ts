@@ -8,6 +8,7 @@ import type { Session } from "@common/types/session";
 import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getCachedResponse, setCachedResponse} from "../utils/cache.util";
 import {AuthRequest} from "../middleware/auth.middleware";
+import { logTelemetry } from "./telemetry.service";
 
 // --------------------------
 // Config / constants
@@ -148,6 +149,7 @@ export async function handleChat(
   req: AuthRequest,
   res: Response
 ) {
+  const startedAt = Date.now();
   const { message, messageObj, sessionId, systemPrompt, model, temperature } =
     req.body as ChatRequest;
 
@@ -197,7 +199,27 @@ export async function handleChat(
     if (cachedResponse) {
       assistantText = cachedResponse;
       console.log(`Cache Hit for user ${userId} and for session ${sessionId}`);
+      await logTelemetry({
+        eventType: "cache_hit",
+        userId,
+        sessionId: sid,
+        model: model ?? DEFAULT_CHAT_MODEL,
+        temperature: temperature ?? DEFAULT_CHAT_TEMPERATURE,
+        cacheHit: true,
+        durationMs: Date.now() - startedAt,
+        promptChars: userMsg.content.length,
+        responseChars: cachedResponse.length,
+      });
     } else {
+      await logTelemetry({
+        eventType: "cache_miss",
+        userId,
+        sessionId: sid,
+        model: model ?? DEFAULT_CHAT_MODEL,
+        temperature: temperature ?? DEFAULT_CHAT_TEMPERATURE,
+        cacheHit: false,
+        promptChars: userMsg.content.length,
+      });
       console.log("Cache Miss. Invoking LLM for response")
       // 2. Build LangChain messages with systemPrompt + history + current message
       const chatMessages = buildChatMessages({
@@ -212,6 +234,17 @@ export async function handleChat(
       const response = await chatModel.invoke(chatMessages);
       assistantText = extractContent(response);
       await setCachedResponse(userId, sid, userMsg.content, assistantText, CACHE_TTL);
+      await logTelemetry({
+        eventType: "chat_response",
+        userId,
+        sessionId: sid,
+        model: model ?? DEFAULT_CHAT_MODEL,
+        temperature: temperature ?? DEFAULT_CHAT_TEMPERATURE,
+        cacheHit: false,
+        durationMs: Date.now() - startedAt,
+        promptChars: userMsg.content.length,
+        responseChars: assistantText.length,
+      });
     }
 
     const reply: ChatMessage = {
@@ -237,6 +270,17 @@ export async function handleChat(
     });
   } catch (err) {
     console.error("Chat error:", err);
+    await logTelemetry({
+      eventType: "chat_error",
+      userId: req.user?.id,
+      sessionId,
+      model: model ?? DEFAULT_CHAT_MODEL,
+      temperature: temperature ?? DEFAULT_CHAT_TEMPERATURE,
+      cacheHit: false,
+      durationMs: Date.now() - startedAt,
+      promptChars: message?.length,
+      errorMessage: (err as Error)?.message || "Model error",
+    });
     res.status(500).json({ error: "Model error" });
   }
 }
