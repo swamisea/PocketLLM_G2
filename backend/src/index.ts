@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { app } from "./app";
 import { connectToMongo, closeMongo } from "./services/database.service";
-import { seedGuestUser } from "./services/seed.service";
+import {seedAdminUser, seedGuestUser} from "./services/seed.service";
 
 dotenv.config();
 
@@ -11,6 +11,7 @@ async function start() {
   if (process.env.DB_CONN_STRING) {
     await connectToMongo();
     await seedGuestUser();
+    await seedAdminUser();
   }
 
   const server = app.listen(PORT, () => {

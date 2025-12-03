@@ -5,7 +5,7 @@ import type { RootState } from "../store";
 import { setUser, clearUser } from "../store/userSlice";
 import { setUserCookie, clearUserCookie } from "../utils/authCookies";
 import { queryKeys } from "../lib/queryKeys";
-import {createUser, loginUser, guestLogin, guestAvailable } from "../services/account.service";
+import {createUser, loginUser, guestLogin, guestAvailable, adminLogin, adminAvailable } from "../services/account.service";
 
 export function useAuth() {
   const dispatch = useDispatch();
@@ -40,6 +40,23 @@ export function useAuth() {
     queryFn: guestAvailable,
   });
 
+  const adminLoginMutation = useMutation({
+    mutationKey: [queryKeys.account.me],
+    mutationFn: adminLogin,
+    onSuccess: (data) => {
+      if (data.success && data.user) {
+        const userObj = data.user
+        setUserCookie(userObj, data.token);
+        dispatch(setUser(userObj));
+      }
+    },
+  });
+
+  const adminAvailableQuery = useQuery({
+    queryKey: queryKeys.account.adminAvailable,
+    queryFn: adminAvailable,
+  })
+
   const signupMutation = useMutation({
     mutationFn: createUser,
     onSuccess: (data) => {
@@ -62,6 +79,8 @@ export function useAuth() {
     loginMutation,
     guestLoginMutation,
     guestAvailableQuery,
+    adminLoginMutation,
+    adminAvailableQuery,
     signupMutation,
     logout,
   };

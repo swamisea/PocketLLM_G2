@@ -179,14 +179,16 @@ export async function createUser(req: Request, res: Response) {
             email: payload.email,
             username: payload.username,
             password: hashedPassword,
-            createdAt: payload.createdAt
+            createdAt: payload.createdAt,
+            isAdmin: false
         };
 
         const result = await userCollection.insertOne(newUser);
         const token = generateJWTToken(
           result.insertedId.toString(),
           newUser.email,
-          newUser.username
+          newUser.username,
+          false
         )
         res.status(201).json({ 
             success: true, 
@@ -249,7 +251,8 @@ export async function loginUser(req: Request, res: Response) {
         const token = generateJWTToken(
             existingUser._id.toString(),
             existingUser.email,
-            existingUser.username
+            existingUser.username,
+            existingUser.isAdmin || false
         )
         res.status(200).json({
             success: true,
@@ -295,6 +298,7 @@ export async function guestLogin(_req: Request, res: Response) {
                 username,
                 password: hashedPassword,
                 createdAt: new Date().toISOString(),
+                isAdmin: false
             };
             if (name) newUser.name = name;
 
@@ -305,7 +309,8 @@ export async function guestLogin(_req: Request, res: Response) {
         const token = generateJWTToken(
             user._id.toString(),
             user.email,
-            user.username
+            user.username,
+            false
         )
         return res.status(200).json({
             success: true,
@@ -314,7 +319,8 @@ export async function guestLogin(_req: Request, res: Response) {
             user: {
                 id: user._id.toString(),
                 email: user.email,
-                username: user.username
+                username: user.username,
+                isAdmin: false
             }
         });
     } catch (error: any) {
@@ -323,4 +329,77 @@ export async function guestLogin(_req: Request, res: Response) {
             message: error.message || "Guest login failed"
         });
     }
+}
+
+function getAdminEnv() {
+    const email = process.env.ADMIN_EMAIL;
+    const username = process.env.ADMIN_USERNAME;
+    const password = process.env.ADMIN_PASSWORD;
+    const name = process.env.ADMIN_NAME;
+    return { email, username, password, name };
+}
+
+function isAdminConfigured() {
+    const { email, username, password } = getAdminEnv();
+    return Boolean(email && username && password);
+}
+
+export async function adminAvailable(_req: Request, res: Response) {
+    return res.status(200).json({ available: isAdminConfigured() });
+}
+
+export async function adminLogin(_req: Request, res: Response) {
+    if (!isAdminConfigured()) {
+        return res.status(404).json({
+            success: false,
+            message: "Admin login not configured"
+        });
+    }
+    const { email, username, password, name } = getAdminEnv();
+    const USERDETAILS_COLL = process.env.USER_DETAILS_COLLECTION_NAME || "";
+    const userCollection = getCollection(USERDETAILS_COLL);
+
+    try {
+        let user = await userCollection.findOne({ email }) as any;
+        if (!user) {
+            const hashedPassword = await hashPassword(password!);
+            const newUser: any = {
+                email,
+                username,
+                password: hashedPassword,
+                createdAt: new Date().toISOString(),
+                isAdmin: true
+            }
+            if (name) newUser.name = name;
+            const result = await userCollection.insertOne(newUser);
+
+            user = { ...newUser, _id: result.insertedId };
+            console.log(`Admin User created ${email}`)
+        }
+
+        const token = generateJWTToken(
+            user._id.toString(),
+            user.email,
+            user.username,
+            true
+        )
+
+        return res.status(200).json({
+            success: true,
+            message: "Admin login successful",
+            token,
+            user: {
+                id: user._id.toString(),
+                email: user.email,
+                username: user.username,
+                isAdmin: true
+            }
+        });
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            message: error.message || "Admin login failed"
+        });
+    }
+
 }

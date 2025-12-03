@@ -34,3 +34,17 @@ export async function guestLogin(): Promise<LoginUserResponse> {
   );
   return data;
 }
+
+export async function adminAvailable(): Promise<{ available: boolean }> {
+  const { data } = await apiClient.get<{ available: boolean }>(
+      "/api/account/admin"
+  );
+  return data;
+}
+
+export async function adminLogin(): Promise<LoginUserResponse> {
+  const { data } = await apiClient.post<LoginUserResponse>(
+      "/api/account/admin-login"
+  );
+  return data;
+}
