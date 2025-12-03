@@ -15,13 +15,15 @@ export interface JWTPayload {
     id: string;
     email: string;
     username: string;
+    isAdmin: boolean;
 }
 
 export const generateJWTToken = (id: string,
                                  email: string,
-                                 username: string): string => {
+                                 username: string,
+                                 isAdmin: boolean = false): string => {
     return jwt.sign(
-        {id, email, username} as JWTPayload,
+        {id, email, username, isAdmin} as JWTPayload,
         JWT_SECRET,
         { expiresIn: JWT_EXPIRES_IN },
     );

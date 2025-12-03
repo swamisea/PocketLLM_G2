@@ -17,9 +17,10 @@ const schema = yup.object().shape({
 });
 
 const LoginPage: React.FC = () => {
-  const {loginMutation, guestLoginMutation, guestAvailableQuery} = useAuth();
+  const {loginMutation, guestLoginMutation, guestAvailableQuery, adminLoginMutation, adminAvailableQuery} = useAuth();
   const navigate = useNavigate();
   const guestEnabled = guestAvailableQuery.data?.available ?? false;
+  const adminEnabled = adminAvailableQuery.data?.available ?? false;
 
   const form = useForm({
     initialValues: {
@@ -49,6 +50,17 @@ const LoginPage: React.FC = () => {
       }
     });
   };
+
+  const handleAdminLogin = () => {
+    if (!adminEnabled) return;
+    adminLoginMutation.mutate(undefined, {
+      onSuccess: (data) => {
+        if (data.success) {
+          navigate("/", {replace: true});
+        }
+      }
+    })
+  }
 
   return (
     <Flex mih="100vh">
@@ -126,6 +138,17 @@ const LoginPage: React.FC = () => {
                 >
                   Guest Login
                 </Button>
+              )}
+
+              {adminEnabled && (
+                  <Button
+                      variant="light"
+                      fullWidth
+                      loading={adminLoginMutation.isPending}
+                      onClick={handleAdminLogin}
+                  >
+                    Admin Login
+                  </Button>
               )}
             </Stack>
           </form>

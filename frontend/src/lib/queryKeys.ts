@@ -2,6 +2,7 @@ export const queryKeys = {
   account: {
     me: ["account", "me"] as const,
     guestAvailable: ["account", "guest-available"] as const,
+    adminAvailable: ["account", "admin-available"] as const,
   },
   telemetry: {
     recent: ["telemetry", "recent"] as const,
