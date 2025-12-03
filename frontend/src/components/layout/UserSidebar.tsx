@@ -14,7 +14,7 @@ import {
   setSelectedSessionId,
 } from "../../store/sessionsSlice";
 
-const Sidebar: React.FC = () => {
+const UserSidebar: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -103,4 +103,4 @@ const Sidebar: React.FC = () => {
   );
 };
 
-export default Sidebar;
+export default UserSidebar;

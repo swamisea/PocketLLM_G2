@@ -12,8 +12,9 @@ import { Outlet, useNavigate } from "react-router";
 import { useHover, useMediaQuery } from "@mantine/hooks";
 import {IconChevronLeft, IconLayoutSidebar, IconLogout, IconSettings, IconUser} from "@tabler/icons-react";
 
-import Sidebar from "./Sidebar";
+import UserSidebar from "./UserSidebar";
 import { useAuth } from "../../hooks/useAuth";
+import AdminSidebar from "./AdminSidebar";
 
 function getInitials(name: string) {
   if (!name) return "?";
@@ -98,7 +99,7 @@ const AppLayout: React.FC = () => {
 
                 <Menu.Dropdown>
                   <Menu.Label><Group gap={'xs'}><IconUser size={14}/><Text>{user.username}</Text></Group></Menu.Label>
-                  <Menu.Item leftSection={<IconSettings size={14} />}>Preferences</Menu.Item>
+                  {!user.isAdmin && (<Menu.Item leftSection={<IconSettings size={14} />}>Preferences</Menu.Item>)}
                   <Menu.Item leftSection={<IconLogout size={14} />} onClick={handleLogout}>Logout</Menu.Item>
                 </Menu.Dropdown>
               </Menu>
@@ -109,7 +110,7 @@ const AppLayout: React.FC = () => {
 
       {/* NAVBAR (collapsible sidebar) */}
       <AppShell.Navbar p="sm">
-        <Sidebar />
+        {user ? user.isAdmin ? <AdminSidebar /> : <UserSidebar /> : <></>}
       </AppShell.Navbar>
 
       {/* MAIN CONTENT */}
