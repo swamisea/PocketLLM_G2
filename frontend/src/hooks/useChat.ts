@@ -17,7 +17,7 @@ interface UseChatResult {
   messages: ChatMessage[];
   isThinking: boolean;
   isLoadingSession: boolean;
-  sendMessage: (text: string) => Promise<void>;
+  sendMessage: (text: string, model?: string, temp?: number) => Promise<void>;
 }
 
 export function useChat({
@@ -62,7 +62,7 @@ export function useChat({
                  }: ChatRequest) => sendChat(message, sessionId),
   });
 
-  const sendMessage = async (text: string) => {
+  const sendMessage = async (text: string, model?: string, temp?: number) => {
     const trimmed = text.trim();
     if (!trimmed) return;
 
@@ -80,6 +80,8 @@ export function useChat({
       const result = await chatMutation.mutateAsync({
         message: trimmed,
         sessionId: effectiveSessionId,
+        model: model,
+        temperature: temp
       });
 
       setMessages((prev) => [...prev, result.reply]);
