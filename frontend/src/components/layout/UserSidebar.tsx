@@ -1,5 +1,5 @@
 // src/components/layout/Sidebar.tsx
-import React from "react";
+import React, {useEffect} from "react";
 import { ScrollArea, Button, Stack, Text, Group } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
@@ -20,11 +20,16 @@ const UserSidebar: React.FC = () => {
   const { selectedId } = useSelector(
     (state: RootState) => state.sessions
   );
+  const user = useSelector((state: RootState) => state.user.user);
 
-  const { data: serverSessions = [], isLoading } = useQuery({
+  const { data: serverSessions = [], isLoading, refetch } = useQuery({
     queryKey: queryKeys.sessions.list(),
     queryFn: listSessions,
   });
+
+  useEffect(() => {
+    refetch();
+  }, [user]);
 
   const handleSelect = (id: string) => {
     dispatch(setSelectedSessionId(id));
