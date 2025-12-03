@@ -1,13 +1,9 @@
-import { SendChatResponse } from "@common/types/chat";
+import {type ChatRequest, SendChatResponse} from "@common/types/chat";
 import { apiClient } from "../lib/apiClient";
 
 export async function sendChat(
-  message: string,
-  sessionId?: string
+  payload: ChatRequest
 ): Promise<SendChatResponse> {
-  const { data } = await apiClient.post<SendChatResponse>("/api/chat", {
-    message,
-    sessionId,
-  });
+  const { data } = await apiClient.post<SendChatResponse>("/api/chat", payload);
   return data;
 }

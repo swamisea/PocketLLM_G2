@@ -58,7 +58,6 @@ export async function invalidateUserCache(userId: string): Promise<void> {
     try {
         const pattern = `${userId}:*`;
         const keys = await redisClient.keys(pattern);
-
         if (keys.length > 0) {
             await redisClient.del(keys);
             console.log(`Invalidated ${keys.length} cache entries for user ${userId}`);

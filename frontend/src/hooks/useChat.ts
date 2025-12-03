@@ -51,15 +51,8 @@ export function useChat({
     }
   }, [effectiveSessionId, sessionData]);
 
-  const createSessionMutation = useMutation({
-    mutationFn: (title?: string) => createSession(title),
-  });
-
   const chatMutation = useMutation({
-    mutationFn: ({
-                   message,
-                   sessionId,
-                 }: ChatRequest) => sendChat(message, sessionId),
+    mutationFn: sendChat,
   });
 
   const sendMessage = async (text: string, model?: string, temp?: number) => {
