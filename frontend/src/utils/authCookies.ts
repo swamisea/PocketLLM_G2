@@ -36,6 +36,11 @@ export function getUserFromCookie(): User | null {
   }
 }
 
+export function getTokenFromCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  return getCookie(TOKEN_COOKIE);
+}
+
 export function clearUserCookie() {
   deleteCookie(USER_COOKIE);
   deleteCookie(TOKEN_COOKIE);

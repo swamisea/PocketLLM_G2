@@ -19,6 +19,6 @@ router.get("/guest", guestAvailable);
 router.post("/guest-login", guestLogin);
 router.get("/admin", adminAvailable);
 router.post("/admin-login", adminLogin);
-router.put("/update-preferences", updateUserPreferences);
+router.put("/update-preferences", authenticate, updateUserPreferences);
 
 export default router;
