@@ -10,6 +10,7 @@ import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import ChatPage from "./pages/ChatPage";
 import { getUserFromCookie } from "./utils/authCookies";
+import TelemetryPage from "./pages/TelemetryPage";
 
 async function authLoader() {
   const user = getUserFromCookie();
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
       { index: true, element: <ChatPage /> },
       // specific session
       { path: "chat/:sessionId", element: <ChatPage /> },
+      { path: "telemetry", element: <TelemetryPage /> },
     ],
   },
   {

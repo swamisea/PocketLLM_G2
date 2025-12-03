@@ -3,6 +3,9 @@ export const queryKeys = {
     me: ["account", "me"] as const,
     guestAvailable: ["account", "guest-available"] as const,
   },
+  telemetry: {
+    recent: ["telemetry", "recent"] as const,
+  },
   sessions: {
     all: ["sessions"] as const,
     list: () => ["sessions", "list"] as const,
