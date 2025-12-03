@@ -72,6 +72,7 @@ export async function seedAdminUser() {
       }
       else {
         console.log(`Admin seed: user ${email} already exists, skipping`);
+        return
       }
     }
 
