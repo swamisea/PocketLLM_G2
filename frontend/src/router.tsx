@@ -12,6 +12,8 @@ import ChatPage from "./pages/ChatPage";
 import {clearUserCookie, getUserFromCookie} from "./utils/authCookies";
 import TelemetryPage from "./pages/TelemetryPage";
 import {AccessForbiddenPage} from "./pages/AccessForbiddenPage";
+import CacheManagementPage from "./pages/CacheManagementPage";
+import ModelConfigPage from "./pages/ModelConfigPage";
 
 async function isUser() {
   const user = getUserFromCookie();
@@ -63,6 +65,8 @@ export const router = createBrowserRouter([
     element: <AppLayout />,
     children: [
       { index: true, element: <Navigate to={"/admin/telemetry"} replace />},
+      { path: "models", element: <ModelConfigPage /> },
+      { path: "cache", element: <CacheManagementPage /> },
       { path: "telemetry", element: <TelemetryPage /> },
     ],
   },

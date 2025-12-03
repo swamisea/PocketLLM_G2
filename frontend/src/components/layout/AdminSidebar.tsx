@@ -2,9 +2,19 @@
 import React from "react";
 import { Button, Stack, Text, Group } from "@mantine/core";
 import {useLocation, useNavigate} from "react-router";
-import { IconChartHistogram } from "@tabler/icons-react";
+import {IconAi, IconChartHistogram, IconServerCog } from "@tabler/icons-react";
 
 const navItems = [
+  {
+    label: "AI Models",
+    href: "/admin/models",
+    icon: IconAi,
+  },
+  {
+    label: "Cache Management",
+    href: "/admin/cache",
+    icon: IconServerCog,
+  },
   {
     label: "Telemetry",
     href: "/admin/telemetry",
