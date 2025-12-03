@@ -9,37 +9,73 @@ import AppLayout from "./components/layout/AppLayout";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import ChatPage from "./pages/ChatPage";
-import { getUserFromCookie } from "./utils/authCookies";
+import {clearUserCookie, getUserFromCookie} from "./utils/authCookies";
 import TelemetryPage from "./pages/TelemetryPage";
+import {AccessForbiddenPage} from "./pages/AccessForbiddenPage";
 
-async function authLoader() {
+async function isUser() {
   const user = getUserFromCookie();
   if (!user) {
     throw redirect("/login");
   }
+  if (user.isAdmin) {
+    throw redirect("/admin");
+  }
   return null;
+}
+
+async function isAdmin() {
+  const user = getUserFromCookie();
+  if (!user) {
+    throw redirect("/login");
+  }
+  if (!user.isAdmin) {
+    throw redirect("/403");
+  }
+  return null;
+}
+
+async function logout() {
+  clearUserCookie();
+  return redirect("/login");
 }
 
 export const router = createBrowserRouter([
   {
+    path: "/403",
+    element: <AccessForbiddenPage />,
+  },
+  {
     path: "/login",
     element: <LoginPage />,
+  },
+  {
+    path: "/logout",
+    loader: logout
   },
   {
     path: "/signup",
     element: <SignupPage />,
   },
   {
-    path: "/",
-    // element: <div>Hello</div>,
+    path: "/admin",
+    loader: isAdmin,
     element: <AppLayout />,
-    loader: authLoader,
+    children: [
+      { index: true, element: <Navigate to={"/admin/telemetry"} replace />},
+      { path: "telemetry", element: <TelemetryPage /> },
+    ],
+  },
+  {
+    path: "/",
+    element: <AppLayout />,
+    loader: isUser,
     children: [
       // no session selected
       { index: true, element: <ChatPage /> },
+      { path: "chat", element: <ChatPage /> },
       // specific session
       { path: "chat/:sessionId", element: <ChatPage /> },
-      { path: "telemetry", element: <TelemetryPage /> },
     ],
   },
   {
