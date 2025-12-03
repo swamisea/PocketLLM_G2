@@ -4,15 +4,24 @@ import {
   AppShell,
   Group,
   Text,
-  Button,
   ActionIcon, useMantineTheme,
+  Menu,
+  Avatar,
 } from "@mantine/core";
 import { Outlet, useNavigate } from "react-router";
 import { useHover, useMediaQuery } from "@mantine/hooks";
-import { IconChevronLeft, IconLayoutSidebar } from "@tabler/icons-react";
+import {IconChevronLeft, IconLayoutSidebar, IconLogout, IconSettings, IconUser} from "@tabler/icons-react";
 
 import Sidebar from "./Sidebar";
 import { useAuth } from "../../hooks/useAuth";
+
+function getInitials(name: string) {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0]?.[0] ?? "";
+  const second = parts[1]?.[0] ?? (parts[0]?.[1] ?? "");
+  return (first+second).toUpperCase();
+}
 
 const AppLayout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -80,13 +89,20 @@ const AppLayout: React.FC = () => {
 
           <Group gap="xs">
             {user && (
-              <Text size="sm">
-                Signed in as {user.username ?? user.email}
-              </Text>
+              <Menu trigger="hover" closeDelay={200}>
+                <Menu.Target>
+                  <Avatar radius="xl" color="gray">
+                    {getInitials(user.username)}
+                  </Avatar>
+                </Menu.Target>
+
+                <Menu.Dropdown>
+                  <Menu.Label><Group gap={'xs'}><IconUser size={14}/><Text>{user.username}</Text></Group></Menu.Label>
+                  <Menu.Item leftSection={<IconSettings size={14} />}>Preferences</Menu.Item>
+                  <Menu.Item leftSection={<IconLogout size={14} />} onClick={handleLogout}>Logout</Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
             )}
-            <Button variant="light" size="xs" onClick={handleLogout}>
-              Logout
-            </Button>
           </Group>
         </Group>
       </AppShell.Header>
