@@ -1,4 +1,4 @@
-import { CreateUserRequest, CreateUserResponse, LoginUserRequest, LoginUserResponse } from "@common/types/account";
+import { User, CreateUserRequest, CreateUserResponse, LoginUserRequest, LoginUserResponse, UserPreferences } from "@common/types/account";
 import { apiClient } from "../lib/apiClient";
 
 export async function createUser(
@@ -47,4 +47,12 @@ export async function adminLogin(): Promise<LoginUserResponse> {
       "/api/account/admin-login"
   );
   return data;
+}
+
+export async function updateUserPreferences(payload: UserPreferences): Promise<User> {
+  const { data } = await apiClient.put<{ success: boolean; user: User }>(
+    "/api/account/update-preferences",
+    payload
+  );
+  return data.user;
 }

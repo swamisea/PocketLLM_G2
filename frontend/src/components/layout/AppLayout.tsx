@@ -13,9 +13,11 @@ import { IconChevronLeft, IconLayoutSidebar } from "@tabler/icons-react";
 
 import Sidebar from "./Sidebar";
 import { useAuth } from "../../hooks/useAuth";
+import UserPreferencesModal from '../modals/UserPreferencesModal';
 
 const AppLayout: React.FC = () => {
   const { user, logout } = useAuth();
+  const [prefsOpen, setPrefsOpen] = useState(false);
   const navigate = useNavigate();
   const theme = useMantineTheme()
   // Mantine's default "sm" breakpoint is 48em (~768px)
@@ -80,10 +82,17 @@ const AppLayout: React.FC = () => {
 
           <Group gap="xs">
             {user && (
-              <Text size="sm">
+              <Text 
+              size="sm"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setPrefsOpen(true)}
+              >
                 Signed in as {user.username ?? user.email}
               </Text>
             )}
+
+            <UserPreferencesModal opened={prefsOpen} onClose={() => setPrefsOpen(false)} />
+
             <Button variant="light" size="xs" onClick={handleLogout}>
               Logout
             </Button>

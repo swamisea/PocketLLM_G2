@@ -5,8 +5,11 @@ import {
     guestLogin,
     guestAvailable,
     adminAvailable,
-    adminLogin
+    adminLogin, 
+    updateUserPreferences
 } from "../services/account.service";
+
+import { authenticate } from "../middleware/auth.middleware";
 
 const router = Router();
 
@@ -16,5 +19,6 @@ router.get("/guest", guestAvailable);
 router.post("/guest-login", guestLogin);
 router.get("/admin", adminAvailable);
 router.post("/admin-login", adminLogin);
+router.put("/update-preferences", updateUserPreferences);
 
 export default router;
