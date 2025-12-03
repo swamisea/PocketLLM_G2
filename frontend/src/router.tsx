@@ -64,7 +64,7 @@ export const router = createBrowserRouter([
     loader: isAdmin,
     element: <AppLayout />,
     children: [
-      { index: true, element: <Navigate to={"/admin/telemetry"} replace />},
+      { index: true, element: <Navigate to={"/admin/models"} replace />},
       { path: "models", element: <ModelConfigPage /> },
       { path: "cache", element: <CacheManagementPage /> },
       { path: "telemetry", element: <TelemetryPage /> },

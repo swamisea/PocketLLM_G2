@@ -158,7 +158,7 @@ export default function ModelConfigPage() {
           <Text size="sm" c="dimmed">
             Enter an Ollama model name (for example{" "}
             <Text component="span" fw={500}>
-              llama3.1:8b
+              smollm2:135m
             </Text>
             ). The download runs in the background; check back on this page
             after a few minutes.
@@ -169,7 +169,7 @@ export default function ModelConfigPage() {
               <TextInput
                 style={{flex: 1}}
                 label="Model name"
-                placeholder="llama3.1:8b"
+                placeholder="smollm2:135m"
                 value={newModelName}
                 onChange={(event) => setNewModelName(event.currentTarget.value)}
                 disabled={addModelMutation.isPending}
