@@ -9,7 +9,7 @@ import {
   Avatar,
 } from "@mantine/core";
 import { Outlet, useNavigate } from "react-router";
-import { useHover, useMediaQuery } from "@mantine/hooks";
+import {useDisclosure, useHover, useMediaQuery} from "@mantine/hooks";
 import {IconChevronLeft, IconLayoutSidebar, IconLogout, IconSettings, IconUser} from "@tabler/icons-react";
 
 import UserSidebar from "./UserSidebar";
@@ -27,7 +27,7 @@ function getInitials(name: string) {
 
 const AppLayout: React.FC = () => {
   const { user, logout } = useAuth();
-  const [prefsOpen, setPrefsOpen] = useState(false);
+  const [prefModalOpen, {open: openModal, close: closeModal}] = useDisclosure(false)
   const navigate = useNavigate();
   const theme = useMantineTheme()
   // Mantine's default "sm" breakpoint is 48em (~768px)
@@ -92,7 +92,6 @@ const AppLayout: React.FC = () => {
 
           <Group gap="xs">
             {user && (
-              <Group>
               <Menu trigger="hover" closeDelay={200}>
                 <Menu.Target>
                   <Avatar radius="xl" color="gray">
@@ -102,21 +101,13 @@ const AppLayout: React.FC = () => {
 
                 <Menu.Dropdown>
                   <Menu.Label><Group gap={'xs'}><IconUser size={14}/><Text>{user.username}</Text></Group></Menu.Label>
-                  {!user.isAdmin && (<Menu.Item leftSection={<IconSettings size={14} />}>Preferences</Menu.Item>)}
+                  {!user.isAdmin && (<Menu.Item leftSection={<IconSettings size={14}/>} onClick={openModal} >Preferences</Menu.Item>)}
                   <Menu.Item leftSection={<IconLogout size={14} />} onClick={handleLogout}>Logout</Menu.Item>
                 </Menu.Dropdown>
               </Menu>
-              <Text
-              size="sm"
-              style={{ cursor: 'pointer' }}
-              onClick={() => setPrefsOpen(true)}
-              >
-                Signed in as {user.username ?? user.email}
-              </Text>
-              </Group>
             )}
 
-            <UserPreferencesModal opened={prefsOpen} onClose={() => setPrefsOpen(false)} />
+            <UserPreferencesModal opened={prefModalOpen} onClose={closeModal} />
           </Group>
         </Group>
       </AppShell.Header>
