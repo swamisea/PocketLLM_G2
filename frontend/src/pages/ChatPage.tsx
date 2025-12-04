@@ -38,6 +38,7 @@ const ChatPage: React.FC = () => {
   const resetImportRef = useRef<(() => void) | null>(null);
   const fileDialogRef = useRef<(() => void) | null>(null);
 
+  const user = useSelector((state: RootState) => state.user.user);
   const { selectedId } = useSelector(
     (state: RootState) => state.sessions
   );
@@ -62,8 +63,9 @@ const ChatPage: React.FC = () => {
       "/api/chat/models"
     ).then(res => res.data)
   })
-  const defaultModel = env.defaultModel;
-  const defaultTemperature = env.defaultTemperature;
+  const defaultModel = user?.preferences?.model || env.defaultModel;
+  const defaultTemperature = user?.preferences?.temp || env.defaultTemperature;
+  const systemPrompt = user?.preferences?.custom_instructions
 
   // States
   const [input, setInput] = useState("");
@@ -82,7 +84,7 @@ const ChatPage: React.FC = () => {
     const trimmed = input.trim();
     if (!trimmed) return;
     setInput("");
-    await sendMessage(trimmed, modelParams.model, modelParams.temp);
+    await sendMessage(trimmed, modelParams.model, modelParams.temp, systemPrompt);
   };
 
   const canSend = input.trim().length > 0 && !isThinking;
