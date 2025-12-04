@@ -142,7 +142,7 @@ const LoginPage: React.FC = () => {
 
               {adminEnabled && (
                   <Button
-                      variant="light"
+                      variant="outline"
                       fullWidth
                       loading={adminLoginMutation.isPending}
                       onClick={handleAdminLogin}

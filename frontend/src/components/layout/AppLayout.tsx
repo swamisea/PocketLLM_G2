@@ -4,20 +4,30 @@ import {
   AppShell,
   Group,
   Text,
-  Button,
   ActionIcon, useMantineTheme,
+  Menu,
+  Avatar,
 } from "@mantine/core";
 import { Outlet, useNavigate } from "react-router";
-import { useHover, useMediaQuery } from "@mantine/hooks";
-import { IconChevronLeft, IconLayoutSidebar } from "@tabler/icons-react";
+import {useDisclosure, useHover, useMediaQuery} from "@mantine/hooks";
+import {IconChevronLeft, IconLayoutSidebar, IconLogout, IconSettings, IconUser} from "@tabler/icons-react";
 
-import Sidebar from "./Sidebar";
+import UserSidebar from "./UserSidebar";
 import { useAuth } from "../../hooks/useAuth";
+import AdminSidebar from "./AdminSidebar";
 import UserPreferencesModal from '../modals/UserPreferencesModal';
+
+function getInitials(name: string) {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0]?.[0] ?? "";
+  const second = parts[1]?.[0] ?? (parts[0]?.[1] ?? "");
+  return (first+second).toUpperCase();
+}
 
 const AppLayout: React.FC = () => {
   const { user, logout } = useAuth();
-  const [prefsOpen, setPrefsOpen] = useState(false);
+  const [prefModalOpen, {open: openModal, close: closeModal}] = useDisclosure(false)
   const navigate = useNavigate();
   const theme = useMantineTheme()
   // Mantine's default "sm" breakpoint is 48em (~768px)
@@ -82,27 +92,29 @@ const AppLayout: React.FC = () => {
 
           <Group gap="xs">
             {user && (
-              <Text 
-              size="sm"
-              style={{ cursor: 'pointer' }}
-              onClick={() => setPrefsOpen(true)}
-              >
-                Signed in as {user.username ?? user.email}
-              </Text>
+              <Menu trigger="hover" closeDelay={200}>
+                <Menu.Target>
+                  <Avatar radius="xl" color="gray">
+                    {getInitials(user.username)}
+                  </Avatar>
+                </Menu.Target>
+
+                <Menu.Dropdown>
+                  <Menu.Label><Group gap={'xs'}><IconUser size={14}/><Text>{user.username}</Text></Group></Menu.Label>
+                  {!user.isAdmin && (<Menu.Item leftSection={<IconSettings size={14}/>} onClick={openModal} >Preferences</Menu.Item>)}
+                  <Menu.Item leftSection={<IconLogout size={14} />} onClick={handleLogout}>Logout</Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
             )}
 
-            <UserPreferencesModal opened={prefsOpen} onClose={() => setPrefsOpen(false)} />
-
-            <Button variant="light" size="xs" onClick={handleLogout}>
-              Logout
-            </Button>
+            <UserPreferencesModal opened={prefModalOpen} onClose={closeModal} />
           </Group>
         </Group>
       </AppShell.Header>
 
       {/* NAVBAR (collapsible sidebar) */}
       <AppShell.Navbar p="sm">
-        <Sidebar />
+        {user ? user.isAdmin ? <AdminSidebar /> : <UserSidebar /> : <></>}
       </AppShell.Navbar>
 
       {/* MAIN CONTENT */}

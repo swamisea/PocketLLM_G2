@@ -15,4 +15,7 @@ export const queryKeys = {
   chat: {
     bySession: (id: string) => ["chat", "session", id] as const,
   },
+  models: {
+    all: ["models"]
+  }
 };

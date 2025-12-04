@@ -1,31 +1,7 @@
 import axios from 'axios';
+import {OllamaListResponse, OllamaModel} from "@common/types/ollama";
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_URL || 'http://ollama:11434';
-
-export interface OllamaModel {
-    name: string;
-    modified_at: string;
-    size: number;
-    digest: string;
-    details?: {
-        format: string;
-        family: string;
-        families: string[];
-        parameter_size: string;
-        quantization_level: string;
-    };
-}
-
-export interface OllamaListResponse {
-    models: OllamaModel[];
-}
-
-export interface OllamaPullProgress {
-    status: string,
-    digest?: string;
-    total?: number;
-    completed?: number;
-}
 
 export async function listOllamaModels(): Promise<OllamaModel[]> {
     try {

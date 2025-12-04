@@ -76,6 +76,7 @@ export function useAuth() {
   return {
     user,
     isAuthenticated: !!user,
+    isAdmin: user?.isAdmin ?? false,
     loginMutation,
     guestLoginMutation,
     guestAvailableQuery,

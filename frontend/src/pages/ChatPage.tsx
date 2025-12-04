@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Badge,
+  ComboboxItem,
   Container,
-  Group,
-  Paper,
-  Text,
+  Group, NumberInput,
+  Paper, Select,
   Menu,
   ActionIcon,
   Tooltip,
@@ -25,6 +25,10 @@ import { exportSession as exportSessionApi, importSession as importSessionApi } 
 import type { ChatSessionExport } from "@common/types/export";
 import { queryKeys } from "../lib/queryKeys";
 import type { SessionItem } from "@common/types/session";
+import { useQuery } from "@tanstack/react-query";
+import {apiClient} from "../lib/apiClient";
+import {OllamaModel} from "@common/types/ollama";
+import {env} from "../config/env";
 
 const ChatPage: React.FC = () => {
   const dispatch = useDispatch();
@@ -34,6 +38,7 @@ const ChatPage: React.FC = () => {
   const resetImportRef = useRef<(() => void) | null>(null);
   const fileDialogRef = useRef<(() => void) | null>(null);
 
+  const user = useSelector((state: RootState) => state.user.user);
   const { selectedId } = useSelector(
     (state: RootState) => state.sessions
   );
@@ -48,18 +53,42 @@ const ChatPage: React.FC = () => {
     }
   }, [dispatch, urlSessionId]);
 
+  // Data
   const { messages, isThinking, isLoadingSession, sendMessage } = useChat({
     effectiveSessionId,
   });
+  const {data: models} = useQuery({
+    queryKey: queryKeys.models.all,
+    queryFn: () => apiClient.get<OllamaModel[]>(
+      "/api/chat/models"
+    ).then(res => res.data)
+  })
+  const defaultModel = user?.preferences?.model || env.defaultModel;
+  const defaultTemperature = user?.preferences?.temp || env.defaultTemperature;
+  const systemPrompt = user?.preferences?.custom_instructions
 
+  // States
   const [input, setInput] = useState("");
+  const modelOptions: ComboboxItem[] = useMemo(() => {
+      return models?.map(model => ({value: model.name, label: model.name})) ?? []
+    },
+    [models]
+  )
+  const [modelParams, setModelParams] = useState<{model: string, temp: number}>({
+    model: defaultModel,
+    temp: defaultTemperature,
+  })
   const [isImporting, setIsImporting] = useState(false);
+
+  useEffect(() => {
+    setModelParams({model: defaultModel, temp: defaultTemperature})
+  }, [user]);
 
   const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed) return;
     setInput("");
-    await sendMessage(trimmed);
+    await sendMessage(trimmed, modelParams.model, modelParams.temp, systemPrompt);
   };
 
   const canSend = input.trim().length > 0 && !isThinking;
@@ -136,7 +165,28 @@ const ChatPage: React.FC = () => {
     >
       {/* Header row - title + status pill */}
       <Group justify="space-between" mb="sm">
-        <Text fw={600}>Pocket LLM Chat</Text>
+        <Group>
+          <Select
+            label="Model"
+            placeholder="Select a model"
+            data={modelOptions}
+            size={"xs"}
+            style={{width: 200}}
+            value={modelParams.model}
+            onChange={(model) => setModelParams({...modelParams, model: model!})}
+          />
+          <NumberInput
+            label="Temperature"
+            min={0.0}
+            max={2.0}
+            step={0.1}
+            decimalScale={1}
+            size={"xs"}
+            style={{width: 100}}
+            value={modelParams.temp}
+            onChange={(temp) => setModelParams({...modelParams, temp: temp as number})}
+          />
+        </Group>
         <Group gap="xs">
           <Badge
             radius="xl"

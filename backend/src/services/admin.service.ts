@@ -13,19 +13,7 @@ import { getCollection } from "./database.service";
 export async function getModels(req: AuthRequest, res: Response): Promise<void> {
     try {
         const models = await listOllamaModels();
-
-        res.json({
-            success: true,
-            count: models.length,
-            models: models.map(model => ({
-                name: model.name,
-                size: model.size,
-                sizeGB: (model.size / (1024 ** 3)).toFixed(2),
-                modified_at: model.modified_at,
-                digest: model.digest,
-                details: model.details
-            }))
-        });
+        res.json(models);
     } catch (error: any) {
         res.status(500).json({
             success: false,

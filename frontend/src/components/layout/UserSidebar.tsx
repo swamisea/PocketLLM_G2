@@ -1,10 +1,9 @@
 // src/components/layout/Sidebar.tsx
-import React from "react";
+import React, {useEffect} from "react";
 import { ScrollArea, Button, Stack, Text, Group } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
-import { IconChartHistogram } from "@tabler/icons-react";
 
 import { listSessions } from "../../services/sessions.service";
 import { queryKeys } from "../../lib/queryKeys";
@@ -14,18 +13,23 @@ import {
   setSelectedSessionId,
 } from "../../store/sessionsSlice";
 
-const Sidebar: React.FC = () => {
+const UserSidebar: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const { selectedId } = useSelector(
     (state: RootState) => state.sessions
   );
+  const user = useSelector((state: RootState) => state.user.user);
 
-  const { data: serverSessions = [], isLoading } = useQuery({
+  const { data: serverSessions = [], isLoading, refetch } = useQuery({
     queryKey: queryKeys.sessions.list(),
     queryFn: listSessions,
   });
+
+  useEffect(() => {
+    refetch();
+  }, [user]);
 
   const handleSelect = (id: string) => {
     dispatch(setSelectedSessionId(id));
@@ -35,10 +39,6 @@ const Sidebar: React.FC = () => {
   const handleNewChat = () => {
     dispatch(setSelectedSessionId(undefined));
     navigate(`/`);
-  };
-
-  const handleTelemetry = () => {
-    navigate(`/telemetry`);
   };
 
   return (
@@ -85,22 +85,8 @@ const Sidebar: React.FC = () => {
           )}
         </Stack>
       </ScrollArea>
-
-      {/* TELEMETRY LINK */}
-      <Button
-        variant="subtle"
-        size="sm"
-        radius="md"
-        fullWidth
-        onClick={handleTelemetry}
-      >
-        <Group gap={6} justify="center">
-          <IconChartHistogram size={16} />
-          <Text size="sm">Telemetry</Text>
-        </Group>
-      </Button>
     </Stack>
   );
 };
 
-export default Sidebar;
+export default UserSidebar;
