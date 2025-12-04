@@ -81,7 +81,6 @@ const ChatPage: React.FC = () => {
   const [isImporting, setIsImporting] = useState(false);
 
   useEffect(() => {
-    if (modelParams.model !== defaultModel || modelParams.temp !== defaultTemperature) return;
     setModelParams({model: defaultModel, temp: defaultTemperature})
   }, [user]);
 
