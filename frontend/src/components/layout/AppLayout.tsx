@@ -15,6 +15,7 @@ import {IconChevronLeft, IconLayoutSidebar, IconLogout, IconSettings, IconUser} 
 import UserSidebar from "./UserSidebar";
 import { useAuth } from "../../hooks/useAuth";
 import AdminSidebar from "./AdminSidebar";
+import UserPreferencesModal from '../modals/UserPreferencesModal';
 
 function getInitials(name: string) {
   if (!name) return "?";
@@ -26,6 +27,7 @@ function getInitials(name: string) {
 
 const AppLayout: React.FC = () => {
   const { user, logout } = useAuth();
+  const [prefsOpen, setPrefsOpen] = useState(false);
   const navigate = useNavigate();
   const theme = useMantineTheme()
   // Mantine's default "sm" breakpoint is 48em (~768px)
@@ -90,6 +92,7 @@ const AppLayout: React.FC = () => {
 
           <Group gap="xs">
             {user && (
+              <Group>
               <Menu trigger="hover" closeDelay={200}>
                 <Menu.Target>
                   <Avatar radius="xl" color="gray">
@@ -103,7 +106,17 @@ const AppLayout: React.FC = () => {
                   <Menu.Item leftSection={<IconLogout size={14} />} onClick={handleLogout}>Logout</Menu.Item>
                 </Menu.Dropdown>
               </Menu>
+              <Text
+              size="sm"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setPrefsOpen(true)}
+              >
+                Signed in as {user.username ?? user.email}
+              </Text>
+              </Group>
             )}
+
+            <UserPreferencesModal opened={prefsOpen} onClose={() => setPrefsOpen(false)} />
           </Group>
         </Group>
       </AppShell.Header>
