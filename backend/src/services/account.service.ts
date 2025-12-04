@@ -23,7 +23,7 @@ interface UserAccountValidation {
 const DEFAULT_PREFERENCES: UserPreferences = {
     theme: 'light',
     model: 'gemma3:270m',
-    temp: 0.7,
+    temp: 1.0,
     custom_instructions: '',
   };
 
