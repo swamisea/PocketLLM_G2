@@ -3,8 +3,10 @@ import * as mongoDB from "mongodb";
 import { Request, Response } from "express";
 import argon2 from 'argon2';
 import { getCollection } from "./database.service";
-import { CreateUserRequest, LoginUserRequest } from "@common/types/account";
+import { CreateUserRequest, LoginUserRequest, UserPreferences } from "@common/types/account";
 import { generateJWTToken} from "../utils/jwt.util";
+import { ObjectId } from "mongodb";
+import { AuthRequest } from "../middleware/auth.middleware";
 
 interface InputFieldValidation {
     valid: boolean;
@@ -17,6 +19,13 @@ interface UserAccountValidation {
     emailErrors: string[];
     passwordErrors: string[]
 }
+
+const DEFAULT_PREFERENCES: UserPreferences = {
+    theme: 'light',
+    model: 'gemma3:270m',
+    temp: 0.7,
+    custom_instructions: '',
+  };
 
 dotenv.config()
 
@@ -144,7 +153,8 @@ export async function createUser(req: Request, res: Response) {
             email: req.body.email,
             username: req.body.username,
             password: req.body.password,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            preferences: req.body.preferences || DEFAULT_PREFERENCES
         };
 
         const validation = validatePayload(payload);
@@ -180,7 +190,8 @@ export async function createUser(req: Request, res: Response) {
             username: payload.username,
             password: hashedPassword,
             createdAt: payload.createdAt,
-            isAdmin: false
+            isAdmin: false,
+            preferences: payload.preferences
         };
 
         const result = await userCollection.insertOne(newUser);
@@ -198,7 +209,9 @@ export async function createUser(req: Request, res: Response) {
             user: {
                 id: result.insertedId.toString(),
                 email: newUser.email,
-                username: newUser.username
+                username: newUser.username,
+                isAdmin: false,
+                preferences: newUser.preferences
             }
         });
     } catch (error: any) {
@@ -261,7 +274,9 @@ export async function loginUser(req: Request, res: Response) {
             user: {
                 id: existingUser._id.toString(),
                 email: existingUser.email,
-                username: existingUser.username
+                username: existingUser.username,
+                isAdmin: existingUser.isAdmin || false,
+                preferences: existingUser.preferences || DEFAULT_PREFERENCES
             }
         });
     } catch (error: any) {
@@ -298,7 +313,8 @@ export async function guestLogin(_req: Request, res: Response) {
                 username,
                 password: hashedPassword,
                 createdAt: new Date().toISOString(),
-                isAdmin: false
+                isAdmin: false,
+                preferences: DEFAULT_PREFERENCES,
             };
             if (name) newUser.name = name;
 
@@ -320,7 +336,8 @@ export async function guestLogin(_req: Request, res: Response) {
                 id: user._id.toString(),
                 email: user.email,
                 username: user.username,
-                isAdmin: false
+                isAdmin: false,
+                preferences: DEFAULT_PREFERENCES,
             }
         });
     } catch (error: any) {
@@ -368,7 +385,8 @@ export async function adminLogin(_req: Request, res: Response) {
                 username,
                 password: hashedPassword,
                 createdAt: new Date().toISOString(),
-                isAdmin: true
+                isAdmin: true,
+                preferences: DEFAULT_PREFERENCES,
             }
             if (name) newUser.name = name;
             const result = await userCollection.insertOne(newUser);
@@ -392,7 +410,8 @@ export async function adminLogin(_req: Request, res: Response) {
                 id: user._id.toString(),
                 email: user.email,
                 username: user.username,
-                isAdmin: true
+                isAdmin: true,
+                preferences: DEFAULT_PREFERENCES,
             }
         });
     } catch (error: any) {
@@ -402,4 +421,41 @@ export async function adminLogin(_req: Request, res: Response) {
         });
     }
 
+}
+
+export async function updateUserPreferences(req: AuthRequest, res: Response) {
+    const USERDETAILS_COLL = process.env.USER_DETAILS_COLLECTION_NAME || "";
+    const userCollection = getCollection(USERDETAILS_COLL);
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication required",
+            });
+        }
+        const preferences: UserPreferences = req.body as UserPreferences;
+        await userCollection.updateOne(
+            { _id: new ObjectId(req.user.id) },
+            { $set: { preferences } }
+        );
+        const updatedUser = await userCollection.findOne({
+            _id: new ObjectId(req.user.id),
+          }) as any;
+        return res.status(200).json({
+            success: true,
+            user: {
+                id: updatedUser._id.toString(),
+                email: updatedUser.email,
+                username: updatedUser.username,
+                isAdmin: updatedUser.isAdmin || false,
+                preferences: updatedUser.preferences,
+            },
+        });
+
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            message: error.message || "Failed to update user preferences"
+        });
+    }
 }
