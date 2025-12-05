@@ -25,7 +25,7 @@ const TITLE_MODEL_NAME = DEFAULT_CHAT_MODEL;
 const TITLE_TEMPERATURE = 0.5;
 
 const CONTEXT_MESSAGES_LIMIT = 20;
-const BASE_SYSTEM_PROMPT = "You are PocketLLM, a helpful assistant.";
+const BASE_SYSTEM_PROMPT = "You are a helpful assistant.";
 
 // --------------------------
 // Model helpers

@@ -1,23 +1,40 @@
-# Pocket LLM Boilerplate (Docker + LangChain + Ollama + Mongo)
+# Pocket LLM Portal 
 
-This is a minimal boilerplate showing:
+Course Project for CSCI: 578 - Software Architectures \
+Group No. 2 \
+Team members: \
+Chandan Manjunath, Swaminathan Chellappa, Rithvik Vasishta, Harsha Salim,
+Ryuya Hasegawa, Norbert Sunn, Yutian Yang
+
+
+## Overview
+
+(Docker + LangChain + Ollama + Mongo + Redis)
+
 
 - React + Vite + TypeScript frontend (`frontend/`)
 - Node.js + TypeScript backend (`backend/`)
-- MongoDB + Ollama containers (via `docker-compose.yml`)
+- MongoDB + Redis + Ollama containers (via `docker-compose.yml`)
 - LangChain JS connecting to Ollama in the backend
 - Simple chat flow: Frontend → Backend API → LangChain → Ollama → Response
 
-## Quick start (dev-ish)
+## Quick start
 
 ```bash
 docker compose up --build
 ```
 
+If the above command doesn't work, please use the following:
+```bash
+docker compose build
+docker compose up
+```
+
+**Note:** The first build might take some time to download the model files
+
 Then open `http://localhost:5173` for the frontend.
 
 The backend runs on `http://localhost:8080` (inside Docker, frontend uses `VITE_API_URL`).
 
-You need an Ollama model (default: `llama3.1:8b`) available. The `ollama` service will manage models
+You need an Ollama model (default: `gemma3:270m`) available. The `ollama` service will manage models
 and share them through the `ollama_models` volume.
-```
