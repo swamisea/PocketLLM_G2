@@ -1,7 +1,16 @@
 # Pocket LLM Portal 
-## (Docker + LangChain + Ollama + Mongo + Redis)
 
-This is a minimal boilerplate showing:
+Course Project for CSCI: 578 - Software Architectures \
+Group No. 2 \
+Team members: \
+Chandan Manjunath, Swaminathan Chellappa, Rithvik Vasishta, Harsha Salim,
+Ryuya Hasegawa, Norbert Sunn, Yutian Yang
+
+
+## Overview
+
+(Docker + LangChain + Ollama + Mongo + Redis)
+
 
 - React + Vite + TypeScript frontend (`frontend/`)
 - Node.js + TypeScript backend (`backend/`)
