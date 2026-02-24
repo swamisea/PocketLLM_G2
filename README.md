@@ -6,6 +6,9 @@ Team members: \
 Chandan Manjunath, Swaminathan Chellappa, Rithvik Vasishta, Harsha Salim,
 Ryuya Hasegawa, Norbert Sunn, Yutian Yang
 
+## Demo
+https://github.com/user-attachments/assets/e06c1099-82d2-4fab-a77e-ebbb7c02f18a
+
 
 ## Overview
 
